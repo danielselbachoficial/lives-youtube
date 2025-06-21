@@ -190,3 +190,45 @@ DBPort=5432
 # Editar configuração do Nginx para Zabbix
 nano /etc/zabbix/nginx.conf
 ```
+
+Descomentar e configurar:
+```bash
+listen 8080;
+server_name localhost;  # ou seu IP/domínio
+```
+
+### **j) Incluir Configuração no Nginx Principal**
+```bash
+# Criar link simbólico
+ln -sf /etc/zabbix/nginx.conf /etc/nginx/sites-enabled/zabbix.conf
+
+# Testar configuração
+nginx -t
+```
+
+### 🔧 Configuração do PHP
+
+### **k) Método Rápido - Aplicar Todas as Configurações**
+```bash
+# Fazer backup
+cp /etc/php/8.2/fmp/php.ini /etc/php/8.2/fpm/php.ini.backup
+
+# Aplicar todas as configurações necessárias
+sed -i 's/max_execution_time = 30/max_execution_time = 300/' /etc/php/8.2/fpm/php.ini
+sed -i 's/max_input_time = 60/max_input_time = 300/' /etc/php/8.2/fpm/php.ini
+sed -i 's/;max_input_vars = 1000/max_input_vars = 10000/' /etc/php/8.2/fpm/php.ini
+sed -i 's/memory_limit = 128M/memory_limit = 256M/' /etc/php/8.2/fpm/php.ini
+sed -i 's/post_max_size = 8M/post_max_size = 16M/' /etc/php/8.2/fpm/php.ini
+sed -i 's/;date.timezone =/date.timezone = America\/Sao_Paulo/' /etc/php/8.2/fpm/php.ini
+```
+
+Ou editar manualmente:
+
+Parâmetro	com Valor Necessário
+max_execution_time= 300
+max_input_time= 300
+max_input_vars=	10000
+memory_limit=	256M
+post_max_size=	16M
+date.timezone=	America/Sao_Paulo
+
