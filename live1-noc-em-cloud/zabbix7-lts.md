@@ -1,11 +1,11 @@
-# 📊 NOC em Cloud - Manual Completo Zabbix 7.0 LTS
+```markdown
+# 📊 NOC em Cloud - Manual Completo Grafana 12.0.1
 
-> **Manual Técnico**: Implementação completa de monitoramento com Zabbix 7.0 LTS + PostgreSQL no Debian 12
+> **Manual Técnico**: Implementação completa de visualização com Grafana 12.0.1 + PostgreSQL no Ubuntu Server 24.04 LTS
 
-[![Zabbix](https://img.shields.io/badge/Zabbix-7.0-red?style=for-the-badge&logo=zabbix)](https://www.zabbix.com/)
-[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15-blue?style=for-the-badge&logo=postgresql)](https://www.postgresql.org/)
-[![Debian](https://img.shields.io/badge/Debian-12-red?style=for-the-badge&logo=debian)](https://www.debian.org/)
-[![Nginx](https://img.shields.io/badge/Nginx-1.22-green?style=for-the-badge&logo=nginx)](https://nginx.org/)
+[![Grafana](https://img.shields.io/badge/Grafana-12.0.1-orange?style=for-the-badge&logo=grafana)](https://grafana.com/)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-blue?style=for-the-badge&logo=postgresql)](https://www.postgresql.org/)
+[![Ubuntu](https://img.shields.io/badge/Ubuntu-24.04_LTS-orange?style=for-the-badge&logo=ubuntu)](https://ubuntu.com/)
 
 ---
 
@@ -15,87 +15,46 @@
 - [🚀 Preparação do Ambiente](#-preparação-do-ambiente)
 - [🔧 Instalação dos Componentes](#-instalação-dos-componentes)
 - [🗄️ Configuração do Banco de Dados](#️-configuração-do-banco-de-dados)
-- [⚙️ Configuração do Zabbix Server](#️-configuração-do-zabbix-server)
-- [🌐 Configuração do Nginx](#-configuração-do-nginx)
-- [🔧 Configuração do PHP](#-configuração-do-php)
+- [⚙️ Configuração do Grafana Server](#️-configuração-do-grafana-server)
 - [🚀 Inicialização dos Serviços](#-inicialização-dos-serviços)
 - [✅ Verificações Pós-Instalação](#-verificações-pós-instalação)
-- [🌐 Configuração Web (Setup Wizard)](#-configuração-web-setup-wizard)
+- [🌐 Configuração Web (Setup Inicial)](#-configuração-web-setup-inicial)
 - [🔐 Primeiro Acesso](#-primeiro-acesso)
-- [🔥 Configuração de Firewall](#-configuração-de-firewall)
+- [📊 Configuração de Data Sources](#-configuração-de-data-sources)
+- [🔧 Configurações Avançadas](#-configurações-avançadas)
+- [🎯 Próximos Passos Recomendados](#-próximos-passos-recomendados)
+- [📚 Recursos Úteis](#-recursos-úteis)
+- [🐛 Troubleshooting Comum](#-troubleshooting-comum)
 
 ---
 
 ## 🎯 **Objetivo e Pré-requisitos**
 
 ### **Objetivo**
-Implementar um sistema de monitoramento Zabbix completo para NOC (Network Operations Center) em ambiente cloud, proporcionando visibilidade total da infraestrutura.
+Implementar uma plataforma de visualização Grafana 12.0.1 completa para NOC (Network Operations Center) em ambiente cloud, proporcionando dashboards avançados e análise de dados em tempo real via HTTP direto.
 
 ### **Pré-requisitos**
 
-|
- Componente 
-|
- Especificação 
-|
-|
-------------
-|
----------------
-|
-|
-**
-Sistema Operacional
-**
-|
- Debian 12 (Bookworm) 
-|
-|
-**
-RAM
-**
-|
- Mínimo 2GB (Recomendado 4GB+) 
-|
-|
-**
-CPU
-**
-|
- Mínimo 2 vCPUs 
-|
-|
-**
-Storage
-**
-|
- Mínimo 20GB (Recomendado 50GB+) 
-|
-|
-**
-Acesso
-**
-|
- Root ou usuário com sudo 
-|
-|
-**
-Conectividade
-**
-|
- Internet para download de pacotes 
-|
-|
-**
-Portas
-**
-|
- 80, 443, 8080, 10051, 5432 
-|
+| Componente | Especificação |
+|------------|---------------|
+| **Sistema Operacional** | Ubuntu Server 24.04 LTS (Noble Numbat) |
+| **RAM** | Mínimo 2GB (Recomendado 4GB+) |
+| **CPU** | Mínimo 2 vCPUs |
+| **Storage** | Mínimo 20GB (Recomendado 50GB+) |
+| **Acesso** | Root ou usuário com sudo |
+| **Conectividade** | Internet para download de pacotes |
+| **Portas** | 3000, 5432 |
 
 ### **Arquitetura da Solução**
-┌─────────────────┐ ┌─────────────────┐ ┌─────────────────┐ │ Zabbix Web │ │ Zabbix Server │ │ PostgreSQL │ │ (Nginx+PHP) │◄──►│ (Backend) │◄──►│ (Database) │ └─────────────────┘ └─────────────────┘ └─────────────────┘ │ │ │ ▼ ▼ ▼ Port 8080 Port 10051 Port 5432
-
+```
+┌─────────────────┐ ┌─────────────────┐
+│ Grafana Server  │ │ PostgreSQL      │
+│ (Direct Access) │◄──►│ (Database)      │
+└─────────────────┘ └─────────────────┘
+        │                   │
+        ▼                   ▼
+    Port 3000          Port 5432
+```
 
 ---
 
@@ -104,274 +63,531 @@ Portas
 ### **a) Instalar Dependências Básicas**
 ```bash
 # Atualizar sistema e instalar ferramentas essenciais
-apt update && apt install -y sudo wget curl
-```
-### **b) Configurar Repositório Zabbix**
-```bash
-# Download e instalação do repositório oficial
-wget https://repo.zabbix.com/zabbix/7.0/debian/pool/main/z/zabbix-release/zabbix-release_latest_7.0+debian12_all.deb
-dpkg -i zabbix-release_latest_7.0+debian12_all.deb
-apt update
+sudo apt update && sudo apt upgrade -y
+sudo apt install -y wget curl gnupg2 software-properties-common apt-transport-https lsb-release
 ```
 
-## 🔧 Instalação dos Componentes
-### **c) Instalar Zabbix Server e Dependências**
+### **b) Configurar Repositório Grafana**
 ```bash
-# Instalação completa do Zabbix com PostgreSQL
-apt install -y zabbix-server-pgsql zabbix-frontend-php php8.2-pgsql \
-               zabbix-nginx-conf zabbix-sql-scripts zabbix-agent2 \
-               postgresql postgresql-contrib
+# Adicionar chave GPG oficial do Grafana
+sudo mkdir -p /etc/apt/keyrings/
+wget -q -O - https://apt.grafana.com/gpg.key | gpg --dearmor | sudo tee /etc/apt/keyrings/grafana.gpg > /dev/null
+
+# Adicionar repositório oficial para Ubuntu 24.04
+echo "deb [signed-by=/etc/apt/keyrings/grafana.gpg] https://apt.grafana.com stable main" | sudo tee /etc/apt/sources.list.d/grafana.list
+
+# Atualizar lista de pacotes
+sudo apt update
 ```
 
-### **d) Instalar Plugins do Zabbix Agent 2**
+## 🔧 **Instalação dos Componentes**
+
+### **c) Instalar Grafana 12.0.1 e Dependências**
 ```bash
-# Plugins para monitoramento avançado
-apt install -y zabbix-agent2-plugin-mongodb \
-               zabbix-agent2-plugin-mssql \
-               zabbix-agent2-plugin-postgresql
+# Verificar versões disponíveis
+apt list -a grafana
+
+# Instalação do Grafana OSS (Open Source) versão específica
+sudo apt install -y grafana=12.0.1
+
+# Manter versão específica (evitar atualizações automáticas)
+sudo apt-mark hold grafana
+
+# Instalar PostgreSQL
+sudo apt install -y postgresql postgresql-contrib
+
+# Instalar ferramentas úteis para monitoramento
+sudo apt install -y htop iotop nethogs net-tools
 ```
 
-## 🗄️ Configuração do Banco de Dados
+### **d) Verificar Versão Instalada**
+```bash
+# Confirmar versão do Grafana
+grafana-server --version
+
+# Verificar status inicial
+sudo systemctl status grafana-server
+```
+
+## 🗄️ **Configuração do Banco de Dados**
+
 ### **e) Preparar PostgreSQL**
 ```bash
 # Inicializar e habilitar PostgreSQL
-systemctl start postgresql
-systemctl enable postgresql
+sudo systemctl start postgresql
+sudo systemctl enable postgresql
 
-# Navegar para diretório seguro
-cd /var/lib/postgresql
+# Verificar versão do PostgreSQL
+sudo -u postgres psql -c "SELECT version();"
 ```
 
-### **f) Criar Usuário e Banco**
+### **f) Criar Usuário e Banco para Grafana**
 ```bash
-# Criar usuário zabbix (será solicitada senha)
-sudo -u postgres createuser --pwprompt zabbix
+# Criar usuário grafana (será solicitada senha - anote-a!)
+sudo -u postgres createuser --pwprompt grafana
 
 # Criar banco de dados
-sudo -u postgres createdb -O zabbix zabbix
+sudo -u postgres createdb -O grafana grafana
 
 # Verificar criação
-sudo -u postgres psql -c "\du" | grep zabbix
-sudo -u postgres psql -c "\l" | grep zabbix
+sudo -u postgres psql -c "\du" | grep grafana
+sudo -u postgres psql -c "\l" | grep grafana
 ```
 
-### **g) Importar Schema do Zabbix**
+### **g) Configurar Acesso ao PostgreSQL**
 ```bash
-# Importar estrutura inicial (inserir senha quando solicitado)
-zcat /usr/share/zabbix-sql-scripts/postgresql/server.sql.gz | sudo -u zabbix psql zabbix
+# Editar configuração de autenticação (PostgreSQL 16)
+sudo nano /etc/postgresql/16/main/pg_hba.conf
+
+# Adicionar linha para acesso local do Grafana (adicione antes das outras regras local)
+# local   grafana         grafana                                 md5
+
+# Ou usar comando para adicionar automaticamente
+sudo sed -i '/^local.*all.*all.*peer/i local   grafana         grafana                                 md5' /etc/postgresql/16/main/pg_hba.conf
+
+# Reiniciar PostgreSQL
+sudo systemctl restart postgresql
+
+# Testar conexão
+sudo -u grafana psql -d grafana -c "SELECT 1;"
 ```
 
-## ⚙️ Configuração do Zabbix Server
-### **h) Editar Configuração Principal**
+## ⚙️ **Configuração do Grafana Server**
+
+### **h) Gerar Secret Key**
+```bash
+# Gerar secret key aleatória de 32 caracteres (Método 1: OpenSSL - mais comum)
+SECRET_KEY=$(openssl rand -hex 16)
+echo "Secret Key gerada: $SECRET_KEY"
+```
+
+```bash
+# Gerar secret key aleatória de 32 caracteres (Método 2: /dev/urandom com base64)
+SECRET_KEY=$(head -c 32 /dev/urandom | base64 | tr -d "=+/\" | cut -c1-32)
+echo "Secret Key gerada: $SECRET_KEY"
+```
+
+```bash
+# Gerar secret key aleatória de 32 caracteres (Método 3: /dev/urandom simples)
+SECRET_KEY=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 32 | head -n 1)
+echo "Secret Key gerada: $SECRET_KEY"
+```
+
+```bash
+# Gerar secret key aleatória de 32 caracteres (Método 4: Usando pwgen - se instalado)
+# Instalar pwgen: sudo apt install pwgen
+pwgen -s 32 1
+```
+
+```bash
+# Gerar secret key aleatória de 32 caracteres (Método 5: Usando Python)
+python3 -c "import secrets; print(secrets.token_urlsafe(24))"
+```
+
+### **i) Editar Configuração Principal**
 ```bash
 # Fazer backup da configuração
-cp /etc/zabbix/zabbix_server.conf /etc/zabbix/zabbix_server.conf.backup
+sudo cp /etc/grafana/grafana.ini /etc/grafana/grafana.ini.backup
 
 # Editar arquivo de configuração
-nano /etc/zabbix/zabbix_server.conf
+sudo nano /etc/grafana/grafana.ini
 ```
 
-### Configurações obrigatórias:
-```bash
-DBHost=localhost
-DBName=zabbix
-DBUser=zabbix
-DBPassword=sua_senha_aqui
-DBPort=5432
-ListenIP=0.0.0.0
-ListenPort=10051
+### **Configurações Essenciais para Grafana 12.0.1:**
+```ini
+#################################### Server ####################################
+[server]
+# Protocolo (http)
+protocol = http
+
+# Endereço IP para bind (0.0.0.0 para todas as interfaces)
+http_addr = 0.0.0.0
+
+# Porta HTTP
+http_port = 3000
+
+# Domínio público (substitua pelo seu IP/domínio)
+domain = SEU_IP_PUBLICO
+
+# URL raiz completa (incluindo a porta)
+root_url = http://SEU_IP_PUBLICO:3000/
+
+# Habilitar gzip
+enable_gzip = true
+
+#################################### Database ####################################
+[database]
+# Tipo do banco de dados
+type = postgres
+
+# Host do banco
+host = localhost:5432
+
+# Nome do banco
+name = grafana
+
+# Usuário do banco
+user = grafana
+
+# Senha do banco (substitua pela sua senha)
+password = SUA_SENHA_AQUI
+
+# SSL mode
+ssl_mode = disable
+
+# Configurações de conexão
+max_idle_conn = 2
+max_open_conn = 0
+conn_max_lifetime = 14400
+
+#################################### Security ####################################
+[security]
+# Chave secreta para cookies (use a gerada anteriormente)
+secret_key = SUA_SECRET_KEY_GERADA
+
+# Permitir embedding em iframes
+allow_embedding = true
+
+# Configurações básicas
+admin_user = admin
+admin_password = admin
+
+#################################### Users ####################################
+[users]
+# Permitir registro de usuários
+allow_sign_up = false
+
+# Permitir criação de organizações
+allow_org_create = false
+
+# Atribuição automática de role
+auto_assign_org_role = Viewer
+
+# Verificação de email obrigatória
+verify_email_enabled = false
+
+# Configurações de usuário padrão
+default_theme = dark
+
+#################################### Anonymous Auth ####################################
+[auth.anonymous]
+# Habilitar acesso anônimo (opcional)
+enabled = false
+
+#################################### Logging ####################################
+[log]
+# Modo de log
+mode = console file
+
+# Nível de log
+level = info
+
+# Formato de log
+format = text
+
+#################################### Paths ####################################
+[paths]
+# Diretório de dados
+data = /var/lib/grafana
+
+# Diretório de logs
+logs = /var/log/grafana
+
+# Diretório de plugins
+plugins = /var/lib/grafana/plugins
+
+# Diretório de provisionamento
+provisioning = /etc/grafana/provisioning
+
+#################################### Alerting ####################################
+[alerting]
+# Habilitar alerting
+enabled = true
+
+# Configurações de execução
+execute_alerts = true
+
+#################################### Unified Alerting ####################################
+[unified_alerting]
+# Habilitar unified alerting
+enabled = true
+
+# Configurações de execução
+execute_alerts = true
+
+# Configurações de avaliação
+evaluation_timeout = 30s
+max_attempts = 3
+
+#################################### Explore ####################################
+[explore]
+# Habilitar Explore
+enabled = true
+
+#################################### Plugins ####################################
+[plugins]
+# Permitir plugins não assinados
+allow_loading_unsigned_plugins =
+
+# Configurações de marketplace
+plugin_admin_enabled = true
+
+#################################### Live ####################################
+[live]
+# Configurações de streaming
+max_connections = 100
+allowed_origins = *
 ```
 
-### 🌐 Configuração do Nginx
-
-### **i) Configurar Servidor Web**
+### **j) Configurar Permissões**
 ```bash
-# Editar configuração do Nginx para Zabbix
-nano /etc/zabbix/nginx.conf
+# Definir proprietário correto dos arquivos
+sudo chown -R grafana:grafana /var/lib/grafana
+sudo chown -R grafana:grafana /var/log/grafana
+sudo chown -R grafana:grafana /etc/grafana
+
+# Definir permissões corretas
+sudo chmod 755 /var/lib/grafana
+sudo chmod 755 /var/log/grafana
+sudo chmod 640 /etc/grafana/grafana.ini
 ```
 
-Remover tudo e colar a informação abaixo:
+## 🚀 **Inicialização dos Serviços**
+
+### **k) Iniciar e Habilitar Serviços**
 ```bash
-server {
-    listen 80;
-    server_name SEU_IP_PUBLICO;  # Substitua pelo seu IP público
-    
-    root /usr/share/zabbix;
-    index index.php;
-
-    location = /favicon.ico {
-        log_not_found off;
-    }
-
-    location / {
-        try_files $uri $uri/ =404;
-    }
-
-    location /assets {
-        access_log off;
-        expires 10d;
-    }
-
-    location ~ /\.ht {
-        deny all;
-    }
-
-    location ~ /(api\/|conf[^\.]|include|locale) {
-        deny all;
-        return 404;
-    }
-
-    location /vendor {
-        deny all;
-        return 404;
-    }
-
-    location ~ [^/]\.php(/|$) {
-        fastcgi_pass unix:/var/run/php/php8.2-fpm.sock;
-        fastcgi_split_path_info ^(.+\.php)(/.+)$;
-        fastcgi_index index.php;
-
-        fastcgi_param DOCUMENT_ROOT /usr/share/zabbix;
-        fastcgi_param SCRIPT_FILENAME /usr/share/zabbix$fastcgi_script_name;
-        fastcgi_param PATH_TRANSLATED /usr/share/zabbix$fastcgi_script_name;
-
-        include fastcgi_params;
-        fastcgi_param QUERY_STRING $query_string;
-        fastcgi_param REQUEST_METHOD $request_method;
-        fastcgi_param CONTENT_TYPE $content_type;
-        fastcgi_param CONTENT_LENGTH $content_length;
-
-        fastcgi_intercept_errors on;
-        fastcgi_ignore_client_abort off;
-        fastcgi_connect_timeout 60;
-        fastcgi_send_timeout 180;
-        fastcgi_read_timeout 180;
-        fastcgi_buffer_size 128k;
-        fastcgi_buffers 4 256k;
-        fastcgi_busy_buffers_size 256k;
-        fastcgi_temp_file_write_size 256k;
-    }
-}
-```
-
-### **j) Incluir Configuração no Nginx Principal**
-```bash
-# Criar link simbólico
-ln -sf /etc/zabbix/nginx.conf /etc/nginx/sites-enabled/zabbix.conf
-
-# Testar configuração
-nginx -t
-```
-
-### 🔧 Configuração do PHP
-
-### **k) Método Rápido - Aplicar Todas as Configurações**
-```bash
-# Fazer backup
-cp /etc/php/8.2/fmp/php.ini /etc/php/8.2/fpm/php.ini.backup
-
-# Aplicar todas as configurações necessárias
-sed -i 's/max_execution_time = 30/max_execution_time = 300/' /etc/php/8.2/fpm/php.ini
-sed -i 's/max_input_time = 60/max_input_time = 300/' /etc/php/8.2/fpm/php.ini
-sed -i 's/;max_input_vars = 1000/max_input_vars = 10000/' /etc/php/8.2/fpm/php.ini
-sed -i 's/memory_limit = 128M/memory_limit = 256M/' /etc/php/8.2/fpm/php.ini
-sed -i 's/post_max_size = 8M/post_max_size = 16M/' /etc/php/8.2/fpm/php.ini
-sed -i 's/;date.timezone =/date.timezone = America\/Sao_Paulo/' /etc/php/8.2/fpm/php.ini
-```
-
-Ou editar manualmente:
-
-Parâmetro	com Valor Necessário
-- max_execution_time= 300
-- max_input_time= 300
-- max_input_vars=	10000
-- memory_limit=	256M
-- post_max_size=	16M
-- date.timezone=	America/Sao_Paulo
-
-###🚀 Inicialização dos Serviços
-
-#### **l) Iniciar e Habilitar Serviços**
-```bash
-# Reiniciar todos os serviços
-systemctl restart zabbix-server zabbix-agent2 nginx php8.2-fpm postgresql
+# Iniciar todos os serviços
+sudo systemctl start postgresql
+sudo systemctl start grafana-server
 
 # Habilitar inicialização automática
-systemctl enable zabbix-server zabbix-agent2 nginx php8.2-fpm postgresql
+sudo systemctl enable postgresql
+sudo systemctl enable grafana-server
+
+# Verificar status
+sudo systemctl status postgresql grafana-server
 ```
 
-#### ✅ Verificações Pós-Instalação
-Status dos Serviços
+## ✅ **Verificações Pós-Instalação**
+
+### **Status dos Serviços**
 ```bash
 # Verificar se todos os serviços estão ativos
-systemctl status zabbix-server zabbix-agent2 nginx php8.2-fpm postgresql
+sudo systemctl is-active grafana-server postgresql
+
+# Verificar logs do Grafana
+sudo journalctl -u grafana-server -n 20 --no-pager
 ```
 
-#### Verificar Configurações PHP
-```bash
-# Confirmar parâmetros PHP
-php -r "
-echo 'max_execution_time: ' . ini_get('max_execution_time') . PHP_EOL;
-echo 'post_max_size: ' . ini_get('post_max_size') . PHP_EOL;
-echo 'max_input_time: ' . ini_get('max_input_time') . PHP_EOL;
-echo 'max_input_vars: ' . ini_get('max_input_vars') . PHP_EOL;
-echo 'memory_limit: ' . ini_get('memory_limit') . PHP_EOL;
-echo 'date.timezone: ' . ini_get('date.timezone') . PHP_EOL;
-"
-```
-
-#### Testar Conectividade
+### **Verificar Conectividade**
 ```bash
 # Verificar portas em uso
-netstat -tlnp | grep -E "(80|8080|10051|5432)"
+sudo ss -tlnp | grep -E "(3000|5432)"
+
+# Testar conexão local do Grafana
+curl -I http://localhost:3000
 
 # Testar conexão com banco
-sudo -u zabbix psql -d zabbix -c "SELECT version();"
+sudo -u grafana psql -d grafana -c "SELECT version();"
 ```
 
-### 🌐 Configuração Web (Setup Wizard)
-
-### Acesso à Interface
-URL de acesso: http://SEU_IP_PUBLICO/setup.php
-
-#### Passo a Passo do Setup:
-
-##### 1. Verificar Pré-requisitos
-- ✅ Todos os requisitos devem estar em verde
-- ❌ Se algum estiver vermelho, revisar configurações PHP
-
-##### 2. Configurar Banco de Dados
-- Database type: PostgreSQL
-- Database host: localhost
-- Database port: 5432
-- Database name: zabbix
-- Database schema: (deixar vazio)
-- User: zabbix
-- Password: [sua senha definida anteriormente]
-
-##### 3. Configurações do Zabbix Server
-- Host: localhost
-- Port: 10051
-- Name: Zabbix Server NOC
-
-##### 4. Configurações Finais
-- Fuso horário: America/Sao_Paulo
-- Tema: Blue (recomendado)
-
-### 🔐 Primeiro Acesso
-
-#### Credenciais Padrão
-- URL: http://SEU_IP:8080
-- Usuário: Admin
-- Senha: zabbix
-
-- ⚠️ IMPORTANTE: Altere a senha padrão imediatamente após o primeiro login!
-
-### 🔥 Configuração de Firewall
+### **Verificar Logs**
 ```bash
-# Permitir acesso às portas necessárias
-ufw allow 80/tcp      # HTTP
-ufw allow 443/tcp     # HTTPS
-ufw allow 8080/tcp    # Zabbix Web
-ufw allow 10051/tcp   # Zabbix Server
+# Logs do Grafana
+sudo tail -f /var/log/grafana/grafana.log
+
+# Verificar se não há erros
+sudo journalctl -u grafana-server --since "5 minutes ago"
+```
+
+## 🌐 **Configuração Web (Setup Inicial)**
+
+### **Acesso à Interface**
+- **URL de acesso**: `http://SEU_IP_PUBLICO:3000`
+
+### **Primeiro Login**
+1. Acesse a URL no navegador
+2. Será apresentada a tela de login do Grafana 12.0.1
+3. Use as credenciais padrão
+
+## 🔐 **Primeiro Acesso**
+
+### **Credenciais Padrão**
+- **Usuário**: `admin`
+- **Senha**: `admin`
+
+### **Configuração Inicial**
+1. **Alterar senha padrão** (será solicitado no primeiro login)
+2. **Configurar timezone para America/Sao_Paulo**
+3. **Selecionar tema (Dark recomendado para NOC)**
+
+## 📊 **Configuração de Data Sources**
+
+### **Configurar PostgreSQL como Data Source**
+1. **Acesse**: Connections → Data Sources
+2. **Clique**: Add new data source
+3. **Selecione**: PostgreSQL
+4. **Configure**:
+   - **Name**: PostgreSQL Local
+   - **Host**: `localhost:5432`
+   - **Database**: `grafana`
+   - **User**: `grafana`
+   - **Password**: `[sua senha]`
+   - **SSL Mode**: `disable`
+
+### **Configurar Prometheus (Opcional)**
+```markdown
+# Se você tiver Prometheus rodando
+# Name: Prometheus
+# URL: http://localhost:9090
+# Access: Server (default)
+```
+
+### **Configurar InfluxDB (Opcional)**
+```markdown
+# Se você tiver InfluxDB rodando
+# Name: InfluxDB
+# URL: http://localhost:8086
+# Database: [nome do seu banco]
+```
+
+### **Testar Conexões**
+- Clique em "Save & Test" para cada data source configurado
+- Verifique se a conexão está funcionando corretamente
+
+## 🔧 **Configurações Avançadas**
+
+### **Instalar Plugins Úteis**
+```bash
+# Instalar plugins via CLI
+sudo grafana-cli plugins install grafana-clock-panel
+sudo grafana-cli plugins install grafana-worldmap-panel
+sudo grafana-cli plugins install grafana-piechart-panel
+
+# Reiniciar Grafana após instalar plugins
+sudo systemctl restart grafana-server
+```
+
+### **Configurar Firewall (UFW)**
+```bash
+# Permitir acesso à porta do Grafana
+sudo ufw allow 3000/tcp
+
+# Verificar regras
+sudo ufw status
+```
+
+### **Backup Automático**
+```bash
+# Criar diretório de backup
+sudo mkdir -p /backup/grafana
+
+# Criar script de backup
+sudo tee /usr/local/bin/grafana-backup.sh << 'EOF'
+#!/bin/bash
+BACKUP_DIR="/backup/grafana"
+DATE=$(date +%Y%m%d_%H%M%S)
+
+mkdir -p $BACKUP_DIR
+
+# Backup do banco de dados
+sudo -u postgres pg_dump grafana > $BACKUP_DIR/grafana_db_$DATE.sql
+
+# Backup dos arquivos de configuração
+tar -czf $BACKUP_DIR/grafana_config_$DATE.tar.gz /etc/grafana/
+
+# Backup dos dashboards e dados
+tar -czf $BACKUP_DIR/grafana_data_$DATE.tar.gz /var/lib/grafana/
+
+# Manter apenas backups dos últimos 7 dias
+find $BACKUP_DIR -name "*.sql" -mtime +7 -delete
+find $BACKUP_DIR -name "*.tar.gz" -mtime +7 -delete
+
+echo "Backup concluído: $DATE"
+EOF
+
+# Tornar executável
+sudo chmod +x /usr/local/bin/grafana-backup.sh
+
+# Agendar backup diário às 2h da manhã
+echo "0 2 * * * /usr/local/bin/grafana-backup.sh" | sudo crontab -
+```
+
+### **Monitoramento do Sistema**
+```bash
+# Instalar node-exporter para monitoramento
+sudo apt install -y prometheus-node-exporter
+
+# Habilitar node-exporter
+sudo systemctl enable prometheus-node-exporter
+sudo systemctl start prometheus-node-exporter
+
+# Verificar se está rodando
+sudo systemctl status prometheus-node-exporter
+```
+
+## 🎯 **Próximos Passos Recomendados**
+
+1.  **Configurar Data Sources** específicos para seus sistemas
+2.  **Importar dashboards** da comunidade Grafana
+3.  **Criar dashboards** personalizados para seu NOC
+4.  **Configurar alertas** básicos
+5.  **Implementar backup** automatizado
+6.  **Configurar usuários** e permissões
+7.  **Instalar plugins** adicionais conforme necessidade
+
+## 📚 **Recursos Úteis**
+
+- **Documentação Oficial**: [https://grafana.com/docs/](https://grafana.com/docs/)
+- **Dashboards Comunidade**: [https://grafana.com/grafana/dashboards/](https://grafana.com/grafana/dashboards/)
+- **Plugins**: [https://grafana.com/grafana/plugins/](https://grafana.com/grafana/plugins/)
+- **Alerting**: [https://grafana.com/docs/grafana/latest/alerting/](https://grafana.com/docs/grafana/latest/alerting/)
+
+## 🐛 **Troubleshooting Comum**
+
+### **Grafana não inicia**
+```bash
+# Verificar logs
+sudo journalctl -u grafana-server -n 50
+
+# Verificar configuração
+sudo grafana-server -config /etc/grafana/grafana.ini
+```
+
+### **Problemas de conexão com PostgreSQL**
+```bash
+# Testar conexão manual
+sudo -u grafana psql -h localhost -d grafana -U grafana
+
+# Verificar configuração do pg_hba.conf
+sudo cat /etc/postgresql/16/main/pg_hba.conf | grep grafana
+```
+
+### **Erro de Secret Key**
+```bash
+# Gerar nova secret key
+NEW_SECRET=$(openssl rand -hex 16)
+echo "Nova Secret Key: $NEW_SECRET"
+
+# Substituir no arquivo de configuração
+sudo sed -i "s/secret_key = .*/secret_key = $NEW_SECRET/" /etc/grafana/grafana.ini
+
+# Reiniciar Grafana
+sudo systemctl restart grafana-server
+```
+
+### **Problemas com Live Features**
+```bash
+# Verificar configurações de Live no Grafana
+grep -A 10 "[live]" /etc/grafana/grafana.ini
+
+# Verificar se WebSocket está funcionando
+curl -i -N -H "Connection: Upgrade" -H "Upgrade: websocket" http://localhost:3000/api/live/ws
+```
+
+---
+
+> ⚠️ **IMPORTANTE**: Este manual foi otimizado para acesso HTTP direto na porta 3000. Certifique-se de que a porta esteja liberada no firewall da sua cloud.
+
+> 📝 **NOTA**: Manual otimizado para Ubuntu Server 24.04 LTS com Grafana 12.0.1 e PostgreSQL 16.
 ```
