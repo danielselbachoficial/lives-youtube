@@ -335,7 +335,7 @@ sudo -u zabbix psql -d zabbix -c "SELECT version();"
 ### 🌐 Configuração Web (Setup Wizard)
 
 ### Acesso à Interface
-URL: http://SEU_IP:8080/setup.php
+URL de acesso: http://SEU_IP_PUBLICO/setup.php
 
 #### Passo a Passo do Setup:
 
