@@ -6,8 +6,10 @@ Cada live possui seu próprio diretório com documentação completa, permitindo
 
 📂 Estrutura das Lives
     lives-youtube/
+```
 ├── README.md                           # Você está aqui
 ├── live1-noc-em-cloud/                 # NOC em Cloud com Zabbix + Grafana
 │   ├── README.md
 │   ├── zabbix-7-lts.md
 │   └── grafana.md
+```
