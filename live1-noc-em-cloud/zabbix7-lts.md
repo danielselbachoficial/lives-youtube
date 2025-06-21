@@ -1,6 +1,6 @@
-# 📊 NOC em Cloud - Manual Completo Zabbix 7.0
+# 📊 NOC em Cloud - Manual Completo Zabbix 7.0 LTS
 
-> **Manual Técnico**: Implementação completa de monitoramento com Zabbix 7.0 + PostgreSQL no Debian 12
+> **Manual Técnico**: Implementação completa de monitoramento com Zabbix 7.0 LTS + PostgreSQL no Debian 12
 
 [![Zabbix](https://img.shields.io/badge/Zabbix-7.0-red?style=for-the-badge&logo=zabbix)](https://www.zabbix.com/)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15-blue?style=for-the-badge&logo=postgresql)](https://www.postgresql.org/)
