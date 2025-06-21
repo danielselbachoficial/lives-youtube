@@ -1,40 +1,119 @@
-📊 NOC em Cloud - Manual Completo Zabbix 7.0
-Manual Técnico: Implementação completa de monitoramento com Zabbix 7.0 + PostgreSQL no Debian 12
+# 📊 NOC em Cloud - Manual Completo Zabbix 7.0
 
-📑 Índice
-Objetivo e Pré-requisitos
-Preparação do Ambiente
-Instalação dos Componentes
-Configuração do Banco de Dados
-Configuração do Zabbix Server
-Configuração do Nginx
-Configuração do PHP
-Inicialização dos Serviços
-Verificações Pós-Instalação
-Configuração Web (Setup Wizard)
-Primeiro Acesso
-Configuração de Firewall
-Troubleshooting
-Scripts de Automação
-Próximos Passos
-🎯 1. Objetivo e Pré-requisitos
-Objetivo
+> **Manual Técnico**: Implementação completa de monitoramento com Zabbix 7.0 + PostgreSQL no Debian 12
+
+[![Zabbix](https://img.shields.io/badge/Zabbix-7.0-red?style=for-the-badge&logo=zabbix)](https://www.zabbix.com/)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15-blue?style=for-the-badge&logo=postgresql)](https://www.postgresql.org/)
+[![Debian](https://img.shields.io/badge/Debian-12-red?style=for-the-badge&logo=debian)](https://www.debian.org/)
+[![Nginx](https://img.shields.io/badge/Nginx-1.22-green?style=for-the-badge&logo=nginx)](https://nginx.org/)
+
+---
+
+## 📑 **Índice**
+
+- [🎯 Objetivo e Pré-requisitos](#-objetivo-e-pré-requisitos)
+- [🚀 Preparação do Ambiente](#-preparação-do-ambiente)
+- [🔧 Instalação dos Componentes](#-instalação-dos-componentes)
+- [🗄️ Configuração do Banco de Dados](#️-configuração-do-banco-de-dados)
+- [⚙️ Configuração do Zabbix Server](#️-configuração-do-zabbix-server)
+- [🌐 Configuração do Nginx](#-configuração-do-nginx)
+- [🔧 Configuração do PHP](#-configuração-do-php)
+- [🚀 Inicialização dos Serviços](#-inicialização-dos-serviços)
+- [✅ Verificações Pós-Instalação](#-verificações-pós-instalação)
+- [🌐 Configuração Web (Setup Wizard)](#-configuração-web-setup-wizard)
+- [🔐 Primeiro Acesso](#-primeiro-acesso)
+- [🔥 Configuração de Firewall](#-configuração-de-firewall)
+- [🛠️ Troubleshooting](#️-troubleshooting)
+- [🤖 Scripts de Automação](#-scripts-de-automação)
+- [📈 Próximos Passos](#-próximos-passos)
+
+---
+
+## 🎯 **Objetivo e Pré-requisitos**
+
+### **Objetivo**
 Implementar um sistema de monitoramento Zabbix completo para NOC (Network Operations Center) em ambiente cloud, proporcionando visibilidade total da infraestrutura.
 
-Pré-requisitos
-Componente	Especificação
-Sistema Operacional	Debian 12 (Bookworm)
-RAM	Mínimo 2GB (Recomendado 4GB+)
-CPU	Mínimo 2 vCPUs
-Storage	Mínimo 20GB (Recomendado 50GB+)
-Acesso	Root ou usuário com sudo
-Conectividade	Internet para download de pacotes
-Portas	80, 443, 8080, 10051, 5432
-Arquitetura da Solução
-┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│   Zabbix Web    │    │  Zabbix Server  │    │   PostgreSQL    │
-│   (Nginx+PHP)   │◄──►│   (Backend)     │◄──►│   (Database)    │
-└─────────────────┘    └─────────────────┘    └─────────────────┘
-         │                       │                       │
-         ▼                       ▼                       ▼
-    Port 8080              Port 10051              Port 5432
+### **Pré-requisitos**
+
+|
+ Componente 
+|
+ Especificação 
+|
+|
+------------
+|
+---------------
+|
+|
+**
+Sistema Operacional
+**
+|
+ Debian 12 (Bookworm) 
+|
+|
+**
+RAM
+**
+|
+ Mínimo 2GB (Recomendado 4GB+) 
+|
+|
+**
+CPU
+**
+|
+ Mínimo 2 vCPUs 
+|
+|
+**
+Storage
+**
+|
+ Mínimo 20GB (Recomendado 50GB+) 
+|
+|
+**
+Acesso
+**
+|
+ Root ou usuário com sudo 
+|
+|
+**
+Conectividade
+**
+|
+ Internet para download de pacotes 
+|
+|
+**
+Portas
+**
+|
+ 80, 443, 8080, 10051, 5432 
+|
+
+### **Arquitetura da Solução**
+┌─────────────────┐ ┌─────────────────┐ ┌─────────────────┐ │ Zabbix Web │ │ Zabbix Server │ │ PostgreSQL │ │ (Nginx+PHP) │◄──►│ (Backend) │◄──►│ (Database) │ └─────────────────┘ └─────────────────┘ └─────────────────┘ │ │ │ ▼ ▼ ▼ Port 8080 Port 10051 Port 5432
+
+
+---
+
+## 🚀 **Preparação do Ambiente**
+
+### **a) Instalar Dependências Básicas**
+
+# Atualizar sistema e instalar ferramentas essenciais
+```bash
+apt update && apt install -y sudo wget curl
+```
+b) Configurar Repositório Zabbix
+# Download e instalação do repositório oficial
+```bash
+wget https://repo.zabbix.com/zabbix/7.0/debian/pool/main/z/zabbix-release/zabbix-release_latest_7.0+debian12_all.deb
+dpkg -i zabbix-release_latest_7.0+debian12_all.deb
+apt update
+```
