@@ -591,5 +591,3 @@ curl -i -N -H "Connection: Upgrade" -H "Upgrade: websocket" http://localhost:300
 ---
 
 > ⚠️ **IMPORTANTE**: Este manual foi otimizado para acesso HTTP direto na porta 3000. Certifique-se de que a porta esteja liberada no firewall da sua cloud.
-
-> 📝 **NOTA**: Manual otimizado para Ubuntu Server 24.04 LTS com Grafana 12.0.1 e PostgreSQL 16.
