@@ -310,7 +310,7 @@ URL: http://SEU_IP:8080/setup.php
 
 - ⚠️ IMPORTANTE: Altere a senha padrão imediatamente após o primeiro login!
 
-### 🔥 Configuração de Firewall (Opcional)
+### 🔥 Configuração de Firewall
 ```bash
 # Permitir acesso às portas necessárias
 ufw allow 80/tcp      # HTTP
