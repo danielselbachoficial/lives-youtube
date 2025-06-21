@@ -232,3 +232,79 @@ Parâmetro	com Valor Necessário
 - post_max_size=	16M
 - date.timezone=	America/Sao_Paulo
 
+###🚀 Inicialização dos Serviços
+
+#### **l) Iniciar e Habilitar Serviços**
+```bash
+# Reiniciar todos os serviços
+systemctl restart zabbix-server zabbix-agent2 nginx php8.2-fpm postgresql
+
+# Habilitar inicialização automática
+systemctl enable zabbix-server zabbix-agent2 nginx php8.2-fpm postgresql
+```
+
+#### ✅ Verificações Pós-Instalação
+Status dos Serviços
+```bash
+# Verificar se todos os serviços estão ativos
+systemctl status zabbix-server zabbix-agent2 nginx php8.2-fpm postgresql
+```
+
+#### Verificar Configurações PHP
+```bash
+# Confirmar parâmetros PHP
+php -r "
+echo 'max_execution_time: ' . ini_get('max_execution_time') . PHP_EOL;
+echo 'post_max_size: ' . ini_get('post_max_size') . PHP_EOL;
+echo 'max_input_time: ' . ini_get('max_input_time') . PHP_EOL;
+echo 'max_input_vars: ' . ini_get('max_input_vars') . PHP_EOL;
+echo 'memory_limit: ' . ini_get('memory_limit') . PHP_EOL;
+echo 'date.timezone: ' . ini_get('date.timezone') . PHP_EOL;
+"
+```
+
+#### Testar Conectividade
+```bash
+# Verificar portas em uso
+netstat -tlnp | grep -E "(80|8080|10051|5432)"
+
+# Testar conexão com banco
+sudo -u zabbix psql -d zabbix -c "SELECT version();"
+```
+
+### 🌐 Configuração Web (Setup Wizard)
+
+### Acesso à Interface
+URL: http://SEU_IP:8080/setup.php
+
+#### Passo a Passo do Setup:
+
+1. Verificar Pré-requisitos
+✅ Todos os requisitos devem estar em verde
+❌ Se algum estiver vermelho, revisar configurações PHP
+
+2. Configurar Banco de Dados
+Database type: PostgreSQL
+Database host: localhost
+Database port: 5432
+Database name: zabbix
+Database schema: (deixar vazio)
+User: zabbix
+Password: [sua senha definida anteriormente]
+
+3. Configurações do Zabbix Server
+Host: localhost
+Port: 10051
+Name: Zabbix Server NOC
+
+4. Configurações Finais
+Fuso horário: America/Sao_Paulo
+Tema: Blue (recomendado)
+
+### 🔐 Primeiro Acesso
+
+#### Credenciais Padrão
+URL: http://SEU_IP:8080
+Usuário: Admin
+Senha: zabbix
+⚠️ IMPORTANTE: Altere a senha padrão imediatamente após o primeiro login!
