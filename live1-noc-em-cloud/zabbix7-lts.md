@@ -181,6 +181,8 @@ DBName=zabbix
 DBUser=zabbix
 DBPassword=sua_senha_aqui
 DBPort=5432
+ListenIP=0.0.0.0
+ListenPort=10051
 ```
 
 ### 🌐 Configuração do Nginx
