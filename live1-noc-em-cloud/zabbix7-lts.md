@@ -307,4 +307,14 @@ URL: http://SEU_IP:8080/setup.php
 - URL: http://SEU_IP:8080
 - Usuário: Admin
 - Senha: zabbix
-⚠️ IMPORTANTE: Altere a senha padrão imediatamente após o primeiro login!
+
+- ⚠️ IMPORTANTE: Altere a senha padrão imediatamente após o primeiro login!
+
+### 🔥 Configuração de Firewall (Opcional)
+```bash
+# Permitir acesso às portas necessárias
+ufw allow 80/tcp      # HTTP
+ufw allow 443/tcp     # HTTPS
+ufw allow 8080/tcp    # Zabbix Web
+ufw allow 10051/tcp   # Zabbix Server
+```
