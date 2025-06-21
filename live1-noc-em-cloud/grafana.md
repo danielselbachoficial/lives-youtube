@@ -25,7 +25,7 @@
 
 ## 1. Introdução e Contexto
 
-Instalar o Grafana em uma máquina virtual Ubuntu Server 24.04 LTS que possua apenas um endereço IP público expõe o serviço diretamente à internet. Embora o objetivo desta documentação seja demonstrar o software em aula ao vivo — portanto sem camadas avançadas como balanceadores de carga ou HTTPS —, seguir estritamente o procedimento oficial e adotar mínimas salvaguardas reduz riscos de interrupções durante a demonstração e facilita futuras expansões.  
+Instalar o Grafana em uma máquina virtual Ubuntu Server 24.04 LTS que possua apenas um endereço IP público expõe o serviço diretamente à internet. 
 
 A estrutura deste manual privilegia uma narrativa completa, conduzindo o leitor desde a criação do ambiente até a verificação pós-instalação, sem pular etapas implícitas. Todo comando foi extraído ou validado na [documentação oficial do Grafana](https://grafana.com/docs/grafana/latest/setup-grafana/installation/debian/) e testado em Ubuntu Server 24.04 LTS (Noble Numbat).
 
@@ -33,7 +33,7 @@ A estrutura deste manual privilegia uma narrativa completa, conduzindo o leitor 
 
 ## 2. Requisitos de Sistema e Dimensionamento
 
-Ainda que o Grafana seja leve, dimensionar corretamente CPU, RAM e armazenamento evita gargalos quando múltiplos estudantes acessam simultaneamente. As medições de consumo apresentadas a seguir provêm de benchmarks reais conduzidos em 2024-2025.
+Ainda que o Grafana seja leve, dimensionar corretamente CPU, RAM e armazenamento evita gargalos.
 
 | Perfil de Uso | vCPU | RAM | Armazenamento | Conexões Simultâneas Esperadas | Observação de Desempenho |
 |---------------|------|-----|--------------|--------------------------------|--------------------------|
@@ -253,7 +253,7 @@ sudo ufw allow from SEU_IP_ADMINISTRATIVO to any port 22
 
 ---
 
-## 7. Boas Práticas Básicas de Segurança para Aula ao Vivo
+## 7. Boas Práticas Básicas de Segurança
 
 Mesmo sem HTTPS, há rotinas simples que reduzem vetores de ataque comuns:
 
@@ -384,7 +384,7 @@ sudo systemctl status grafana-server
 
 ### 10.1 Resumo da Instalação
 
-A instalação descrita aqui entrega um Grafana funcional em questão de minutos, pronto para ser mostrado em qualquer transmissão ao vivo. Ao conservar estritamente as recomendações oficiais, a probabilidade de incompatibilidades futuras é mínima, e o caminho para upgrades se mantém simples.
+A instalação descrita aqui entrega um Grafana funcional em questão de minutos. Ao conservar estritamente as recomendações oficiais, a probabilidade de incompatibilidades futuras é mínima, e o caminho para upgrades se mantém simples.
 
 ### 10.2 Comandos de Manutenção
 
