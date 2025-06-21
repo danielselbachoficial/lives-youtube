@@ -16,7 +16,7 @@
 4. [Instalação do Grafana via Repositório Oficial](#4-instalação-do-grafana-via-repositório-oficial)
 5. [Inicialização, Ativação e Verificação do Serviço](#5-inicialização-ativação-e-verificação-do-serviço)
 6. [Configuração de Firewall com UFW](#6-configuração-de-firewall-com-ufw)
-7. [Boas Práticas Básicas de Segurança para Aula ao Vivo](#7-boas-práticas-básicas-de-segurança-para-aula-ao-vivo)
+7. [Boas Práticas Básicas de Segurança para Aula ao Vivo](#7-boas-práticas-básicas-de-segurança)
 8. [Testes de Desempenho e Monitoramento Inicial](#8-testes-de-desempenho-e-monitoramento-inicial)
 9. [Resolução de Problemas Mais Comuns](#9-resolução-de-problemas-mais-comuns)
 10. [Considerações Finais e Próximos Passos](#10-considerações-finais-e-próximos-passos)
