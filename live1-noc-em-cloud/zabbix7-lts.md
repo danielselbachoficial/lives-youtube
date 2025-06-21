@@ -23,9 +23,6 @@
 - [🌐 Configuração Web (Setup Wizard)](#-configuração-web-setup-wizard)
 - [🔐 Primeiro Acesso](#-primeiro-acesso)
 - [🔥 Configuração de Firewall](#-configuração-de-firewall)
-- [🛠️ Troubleshooting](#️-troubleshooting)
-- [🤖 Scripts de Automação](#-scripts-de-automação)
-- [📈 Próximos Passos](#-próximos-passos)
 
 ---
 
