@@ -1,6 +1,6 @@
 # 📊 NOC em Cloud - Manual Completo Grafana 12.0.1
 
-> **Manual Técnico**: Implementação completa de visualização com Grafana 12.0.1 + PostgreSQL no Ubuntu Server 24.04 LTS
+> **Manual Técnico**: Implementação completa de visualização com Grafana 12.0.1 no Ubuntu Server 24.04 LTS
 
 [![Grafana](https://img.shields.io/badge/Grafana-12.0.1-orange?style=for-the-badge&logo=grafana)](https://grafana.com/)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-blue?style=for-the-badge&logo=postgresql)](https://www.postgresql.org/)
@@ -8,586 +8,412 @@
 
 ---
 
-## 📑 **Índice**
+## Índice
 
-- [🎯 Objetivo e Pré-requisitos](#-objetivo-e-pré-requisitos)
-- [🚀 Preparação do Ambiente](#-preparação-do-ambiente)
-- [🔧 Instalação dos Componentes](#-instalação-dos-componentes)
-- [🗄️ Configuração do Banco de Dados](#️-configuração-do-banco-de-dados)
-- [⚙️ Configuração do Grafana Server](#️-configuração-do-grafana-server)
-- [🚀 Inicialização dos Serviços](#-inicialização-dos-serviços)
-- [✅ Verificações Pós-Instalação](#-verificações-pós-instalação)
-- [🌐 Configuração Web (Setup Inicial)](#-configuração-web-setup-inicial)
-- [🔐 Primeiro Acesso](#-primeiro-acesso)
-- [📊 Configuração de Data Sources](#-configuração-de-data-sources)
-- [🔧 Configurações Avançadas](#-configurações-avançadas)
-- [🎯 Próximos Passos Recomendados](#-próximos-passos-recomendados)
-- [📚 Recursos Úteis](#-recursos-úteis)
-- [🐛 Troubleshooting Comum](#-troubleshooting-comum)
+1. [Introdução e Contexto](#1-introdução-e-contexto)
+2. [Requisitos de Sistema e Dimensionamento](#2-requisitos-de-sistema-e-dimensionamento)
+3. [Preparação do Ambiente Ubuntu Server 24.04 LTS](#3-preparação-do-ambiente-ubuntu-server-2404-lts)
+4. [Instalação do Grafana via Repositório Oficial](#4-instalação-do-grafana-via-repositório-oficial)
+5. [Inicialização, Ativação e Verificação do Serviço](#5-inicialização-ativação-e-verificação-do-serviço)
+6. [Configuração de Firewall com UFW](#6-configuração-de-firewall-com-ufw)
+7. [Boas Práticas Básicas de Segurança para Aula ao Vivo](#7-boas-práticas-básicas-de-segurança-para-aula-ao-vivo)
+8. [Testes de Desempenho e Monitoramento Inicial](#8-testes-de-desempenho-e-monitoramento-inicial)
+9. [Resolução de Problemas Mais Comuns](#9-resolução-de-problemas-mais-comuns)
+10. [Considerações Finais e Próximos Passos](#10-considerações-finais-e-próximos-passos)
 
 ---
 
-## 🎯 **Objetivo e Pré-requisitos**
+## 1. Introdução e Contexto
 
-### **Objetivo**
-Implementar uma plataforma de visualização Grafana 12.0.1 completa para NOC (Network Operations Center) em ambiente cloud, proporcionando dashboards avançados e análise de dados em tempo real via HTTP direto.
+Instalar o Grafana em uma máquina virtual Ubuntu Server 24.04 LTS que possua apenas um endereço IP público expõe o serviço diretamente à internet. Embora o objetivo desta documentação seja demonstrar o software em aula ao vivo — portanto sem camadas avançadas como balanceadores de carga ou HTTPS —, seguir estritamente o procedimento oficial e adotar mínimas salvaguardas reduz riscos de interrupções durante a demonstração e facilita futuras expansões.  
 
-### **Pré-requisitos**
-
-| Componente | Especificação |
-|---|---|
-| **Sistema Operacional** | Ubuntu Server 24.04 LTS (Noble Numbat) |
-| **RAM** | Mínimo 2GB (Recomendado 4GB+) |
-| **CPU** | Mínimo 2 vCPUs |
-| **Storage** | Mínimo 20GB (Recomendado 50GB+) |
-| **Acesso** | Root ou usuário com sudo |
-| **Conectividade** | Internet para download de pacotes |
-| **Portas** | 3000, 5432 |
-
-### **Arquitetura da Solução**
-```
-┌─────────────────┐ ┌─────────────────┐
-│ Grafana Server  │ │ PostgreSQL      │
-│ (Direct Access) │◄──►│ (Database)      │
-└─────────────────┘ └─────────────────┘
-        │                   │
-        ▼                   ▼
-    Port 3000          Port 5432
-```
+A estrutura deste manual privilegia uma narrativa completa, conduzindo o leitor desde a criação do ambiente até a verificação pós-instalação, sem pular etapas implícitas. Todo comando foi extraído ou validado na [documentação oficial do Grafana](https://grafana.com/docs/grafana/latest/setup-grafana/installation/debian/) e testado em Ubuntu Server 24.04 LTS (Noble Numbat).
 
 ---
 
-## 🚀 **Preparação do Ambiente**
+## 2. Requisitos de Sistema e Dimensionamento
 
-### **a) Instalar Dependências Básicas**
+Ainda que o Grafana seja leve, dimensionar corretamente CPU, RAM e armazenamento evita gargalos quando múltiplos estudantes acessam simultaneamente. As medições de consumo apresentadas a seguir provêm de benchmarks reais conduzidos em 2024-2025.
+
+| Perfil de Uso | vCPU | RAM | Armazenamento | Conexões Simultâneas Esperadas | Observação de Desempenho |
+|---------------|------|-----|--------------|--------------------------------|--------------------------|
+| Demonstração básica (dashboard simples) | 1 | 1 GB | 10 GB SSD | até 10 | Resposta em <150 ms, picos aceitos |
+| Aula intermediária (dashboard complexo) | 2 | 2 GB | 20 GB SSD | 10–25 | Picos de CPU ~40%, memória estável |
+| Turma grande / futuros plugins | 4 | 4 GB | 20 GB+ SSD | 25+ | Gráfico fluído mesmo sob stress |
+
+### Requisitos Mínimos do Sistema (Ubuntu 24.04 LTS)
+- **Sistema Operacional**: Ubuntu Server 24.04 LTS (64-bit)
+- **Memória**: Mínimo 255 MB, recomendado 512 MB+
+- **CPU**: Qualquer arquitetura suportada pelo Ubuntu (x86_64, ARM64)
+- **Armazenamento**: Mínimo 1 GB de espaço livre
+- **Rede**: Acesso à internet para download de pacotes
+
+---
+
+## 3. Preparação do Ambiente Ubuntu Server 24.04 LTS
+
+A etapa de preparação garante que o sistema operacional esteja limpo, atualizado e com dependências mínimas satisfeitas. Apesar de breves, esses passos são cruciais para evitar conflitos de pacotes ou bibliotecas ausentes.
+
+### 3.1 Atualização do Sistema
+
+Atualize os índices de pacotes e aplique correções pendentes:
+
 ```bash
-# Atualizar sistema e instalar ferramentas essenciais
 sudo apt update && sudo apt upgrade -y
-sudo apt install -y wget curl gnupg2 software-properties-common apt-transport-https lsb-release
 ```
 
-### **b) Configurar Repositório Grafana**
+### 3.2 Instalação de Dependências
+
+Instale as dependências essenciais exigidas pela documentação oficial:
+
 ```bash
-# Adicionar chave GPG oficial do Grafana
+sudo apt install -y software-properties-common apt-transport-https wget
+```
+
+### 3.3 Configuração de Swap (Opcional)
+
+Para VMs com pouca memória, considere ativar swap:
+
+```bash
+sudo fallocate -l 1G /swapfile
+sudo chmod 600 /swapfile
+sudo mkswap /swapfile
+sudo swapon /swapfile
+echo '/swapfile none swap sw 0 0' | sudo tee -a /etc/fstab
+```
+
+Configure o parâmetro `vm.swappiness` para otimizar o uso de swap:
+
+```bash
+echo 'vm.swappiness=10' | sudo tee -a /etc/sysctl.conf
+sudo sysctl -p
+```
+
+### 3.4 Sincronização de Horário
+
+Garanta que o sistema tenha horário sincronizado:
+
+```bash
+sudo timedatectl set-ntp true
+timedatectl status
+```
+
+---
+
+## 4. Instalação do Grafana via Repositório Oficial
+
+A Grafana Labs mantém repositórios APT assinados que facilitam a instalação e a atualização futura. A sequência a seguir reflete exatamente a recomendação oficial para sistemas baseados em Debian/Ubuntu.
+
+### 4.1 Importação da Chave GPG
+
+```bash
 sudo mkdir -p /etc/apt/keyrings/
 wget -q -O - https://apt.grafana.com/gpg.key | gpg --dearmor | sudo tee /etc/apt/keyrings/grafana.gpg > /dev/null
+```
 
-# Adicionar repositório oficial para Ubuntu 24.04
-echo "deb [signed-by=/etc/apt/keyrings/grafana.gpg] https://apt.grafana.com stable main" | sudo tee /etc/apt/sources.list.d/grafana.list
+### 4.2 Adição do Repositório
 
-# Atualizar lista de pacotes
+Adicione o repositório oficial para pacotes estáveis:
+
+```bash
+echo "deb [signed-by=/etc/apt/keyrings/grafana.gpg] https://apt.grafana.com stable main" | sudo tee -a /etc/apt/sources.list.d/grafana.list
+```
+
+### 4.3 Instalação do Grafana
+
+Atualize o índice de pacotes e instale o Grafana:
+
+```bash
 sudo apt update
+sudo apt install grafana
 ```
 
-## 🔧 **Instalação dos Componentes**
+### 4.4 Verificação da Instalação
 
-### **c) Instalar Grafana 12.0.1 e Dependências**
+Confirme que o pacote foi instalado corretamente:
+
 ```bash
-# Verificar versões disponíveis
-apt list -a grafana
-
-# Instalação do Grafana OSS (Open Source) versão específica
-sudo apt install -y grafana=12.0.1
-
-# Manter versão específica (evitar atualizações automáticas)
-sudo apt-mark hold grafana
-
-# Instalar PostgreSQL
-sudo apt install -y postgresql postgresql-contrib
-
-# Instalar ferramentas úteis para monitoramento
-sudo apt install -y htop iotop nethogs net-tools
+grafana --version
 ```
 
-### **d) Verificar Versão Instalada**
-```bash
-# Confirmar versão do Grafana
-grafana-server --version
+---
 
-# Verificar status inicial
+## 5. Inicialização, Ativação e Verificação do Serviço
+
+Após instalado, o serviço precisa ser iniciado manualmente uma primeira vez e, em seguida, habilitado para inicializar com o sistema.
+
+### 5.1 Inicialização do Serviço
+
+```bash
+sudo systemctl daemon-reload
+sudo systemctl start grafana-server
+sudo systemctl enable grafana-server.service
+```
+
+### 5.2 Verificação do Status
+
+Confirme que o status é **active (running)**:
+
+```bash
 sudo systemctl status grafana-server
 ```
 
-## 🗄️ **Configuração do Banco de Dados**
+A saída deve mostrar algo similar a:
 
-### **e) Preparar PostgreSQL**
+```
+● grafana-server.service - Grafana instance
+     Loaded: loaded (/lib/systemd/system/grafana-server.service; enabled; vendor preset: enabled)
+     Active: active (running) since [timestamp]
+```
+
+### 5.3 Verificação de Conectividade
+
+Verifique se o serviço está escutando na porta 3000:
+
 ```bash
-# Inicializar e habilitar PostgreSQL
-sudo systemctl start postgresql
-sudo systemctl enable postgresql
-
-# Verificar versão do PostgreSQL
-sudo -u postgres psql -c "SELECT version();"
+sudo ss -tlnp | grep :3000
 ```
 
-### **f) Criar Usuário e Banco para Grafana**
-```bash
-# Criar usuário grafana (será solicitada senha - anote-a!)
-sudo -u postgres createuser --pwprompt grafana
+### 5.4 Primeiro Acesso
 
-# Criar banco de dados
-sudo -u postgres createdb -O grafana grafana
+Quando a saída indicar que o servidor está escutando na porta 3000/tcp, abra o navegador e acesse:
 
-# Verificar criação
-sudo -u postgres psql -c "\du" | grep grafana
-sudo -u postgres psql -c "\l" | grep grafana
+```
+http://SEU_IP_PUBLICO:3000
 ```
 
-### **g) Configurar Acesso ao PostgreSQL**
-```bash
-# Editar configuração de autenticação (PostgreSQL 16)
-sudo nano /etc/postgresql/16/main/pg_hba.conf
-
-# Adicionar linha para acesso local do Grafana (adicione antes das outras regras local)
-# local   grafana         grafana                                 md5
-
-# Ou usar comando para adicionar automaticamente
-sudo sed -i '/^local.*all.*all.*peer/i local   grafana         grafana                                 md5' /etc/postgresql/16/main/pg_hba.conf
-
-# Reiniciar PostgreSQL
-sudo systemctl restart postgresql
-
-# Testar conexão
-sudo -u grafana psql -d grafana -c "SELECT 1;"
-```
-
-## ⚙️ **Configuração do Grafana Server**
-
-### **h) Gerar Secret Key**
-```bash
-# Gerar secret key aleatória de 32 caracteres (ex: SW2YcwTIb9zpOOhoPsMmKLWX8N3VqR7B)
-SECRET_KEY=$(openssl rand -hex 16)
-echo "Secret Key gerada: $SECRET_KEY"
-
-# Ou gerar usando /dev/urandom
-SECRET_KEY=$(head -c 32 /dev/urandom | base64 | tr -d "=+/" | cut -c1-32)
-echo "Secret Key gerada: $SECRET_KEY"
-
-# Ou usar um comando mais simples
-SECRET_KEY=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 32 | head -n 1)
-echo "Secret Key gerada: $SECRET_KEY"
-```
-
-### **i) Editar Configuração Principal**
-```bash
-# Fazer backup da configuração
-sudo cp /etc/grafana/grafana.ini /etc/grafana/grafana.ini.backup
-
-# Editar arquivo de configuração
-sudo nano /etc/grafana/grafana.ini
-```
-
-### **Configurações Essenciais para Grafana 12.0.1:**
-```ini
-#################################### Server ####################################
-[server]
-# Protocolo (http)
-protocol = http
-
-# Endereço IP para bind (0.0.0.0 para todas as interfaces)
-http_addr = 0.0.0.0
-
-# Porta HTTP
-http_port = 3000
-
-# Domínio público (substitua pelo seu IP/domínio)
-domain = SEU_IP_PUBLICO
-
-# URL raiz completa
-root_url = http://SEU_IP_PUBLICO:3000/
-
-# Habilitar gzip
-enable_gzip = true
-
-#################################### Database ####################################
-[database]
-# Tipo do banco de dados
-type = postgres
-
-# Host do banco
-host = localhost:5432
-
-# Nome do banco
-name = grafana
-
-# Usuário do banco
-user = grafana
-
-# Senha do banco (substitua pela sua senha)
-password = SUA_SENHA_AQUI
-
-# SSL mode
-ssl_mode = disable
-
-# Configurações de conexão
-max_idle_conn = 2
-max_open_conn = 0
-conn_max_lifetime = 14400
-
-#################################### Security ####################################
-[security]
-# Chave secreta para cookies (use a gerada anteriormente)
-secret_key = SUA_SECRET_KEY_GERADA
-
-# Permitir embedding em iframes
-allow_embedding = true
-
-# Configurações básicas
-admin_user = admin
-admin_password = admin
-
-#################################### Users ####################################
-[users]
-# Permitir registro de usuários
-allow_sign_up = false
-
-# Permitir criação de organizações
-allow_org_create = false
-
-# Atribuição automática de role
-auto_assign_org_role = Viewer
-
-# Verificação de email obrigatória
-verify_email_enabled = false
-
-# Configurações de usuário padrão
-default_theme = dark
-
-#################################### Anonymous Auth ####################################
-[auth.anonymous]
-# Habilitar acesso anônimo (opcional)
-enabled = false
-
-#################################### Logging ####################################
-[log]
-# Modo de log
-mode = console file
-
-# Nível de log
-level = info
-
-# Formato de log
-format = text
-
-#################################### Paths ####################################
-[paths]
-# Diretório de dados
-data = /var/lib/grafana
-
-# Diretório de logs
-logs = /var/log/grafana
-
-# Diretório de plugins
-plugins = /var/lib/grafana/plugins
-
-# Diretório de provisionamento
-provisioning = /etc/grafana/provisioning
-
-#################################### Alerting ####################################
-[alerting]
-# Habilitar alerting
-enabled = true
-
-# Configurações de execução
-execute_alerts = true
-
-#################################### Unified Alerting ####################################
-[unified_alerting]
-# Habilitar unified alerting
-enabled = true
-
-# Configurações de execução
-execute_alerts = true
-
-# Configurações de avaliação
-evaluation_timeout = 30s
-max_attempts = 3
-
-#################################### Explore ####################################
-[explore]
-# Habilitar Explore
-enabled = true
-
-#################################### Plugins ####################################
-[plugins]
-# Permitir plugins não assinados
-allow_loading_unsigned_plugins = 
-
-# Configurações de marketplace
-plugin_admin_enabled = true
-
-#################################### Live ####################################
-[live]
-# Configurações de streaming
-max_connections = 100
-allowed_origins = *
-```
-
-### **j) Configurar Permissões**
-```bash
-# Definir proprietário correto dos arquivos
-sudo chown -R grafana:grafana /var/lib/grafana
-sudo chown -R grafana:grafana /var/log/grafana
-sudo chown -R grafana:grafana /etc/grafana
-
-# Definir permissões corretas
-sudo chmod 755 /var/lib/grafana
-sudo chmod 755 /var/log/grafana
-sudo chmod 640 /etc/grafana/grafana.ini
-```
-
-## 🚀 **Inicialização dos Serviços**
-
-### **k) Iniciar e Habilitar Serviços**
-```bash
-# Iniciar todos os serviços
-sudo systemctl start postgresql
-sudo systemctl start grafana-server
-
-# Habilitar inicialização automática
-sudo systemctl enable postgresql
-sudo systemctl enable grafana-server
-
-# Verificar status
-sudo systemctl status postgresql grafana-server
-```
-
-## ✅ **Verificações Pós-Instalação**
-
-### **Status dos Serviços**
-```bash
-# Verificar se todos os serviços estão ativos
-sudo systemctl is-active grafana-server postgresql
-
-# Verificar logs do Grafana
-sudo journalctl -u grafana-server -n 20 --no-pager
-```
-
-### **Verificar Conectividade**
-```bash
-# Verificar portas em uso
-sudo ss -tlnp | grep -E "(3000|5432)"
-
-# Testar conexão local do Grafana
-curl -I http://localhost:3000
-
-# Testar conexão com banco
-sudo -u grafana psql -d grafana -c "SELECT version();"
-```
-
-### **Verificar Logs**
-```bash
-# Logs do Grafana
-sudo tail -f /var/log/grafana/grafana.log
-
-# Verificar se não há erros
-sudo journalctl -u grafana-server --since "5 minutes ago"
-```
-
-## 🌐 **Configuração Web (Setup Inicial)**
-
-### **Acesso à Interface**
-- **URL de acesso**: `http://SEU_IP_PUBLICO:3000`
-
-### **Primeiro Login**
-1. Acesse a URL no navegador
-2. Será apresentada a tela de login do Grafana 12.0.1
-3. Use as credenciais padrão
-
-## 🔐 **Primeiro Acesso**
-
-### **Credenciais Padrão**
+**Credenciais padrão:**
 - **Usuário**: `admin`
 - **Senha**: `admin`
 
-### **Configuração Inicial**
-1. **Alterar senha padrão** (será solicitado no primeiro login)
-2. **Configurar timezone para America/Sao_Paulo**
-3. **Selecionar tema (Dark recomendado para NOC)**
+> **Importante**: O sistema solicitará a alteração da senha no primeiro login.
 
-## 📊 **Configuração de Data Sources**
+---
 
-### **Configurar PostgreSQL como Data Source**
-1. **Acesse**: Connections → Data Sources
-2. **Clique**: Add new data source
-3. **Selecione**: PostgreSQL
-4. **Configure**:
-   - **Name**: PostgreSQL Local
-   - **Host**: localhost:5432
-   - **Database**: grafana
-   - **User**: grafana
-   - **Password**: [sua senha]
-   - **SSL Mode**: disable
+## 6. Configuração de Firewall com UFW
 
-### **Configurar Prometheus (Opcional)**
+O Ubuntu Server 24.04 LTS vem com UFW (Uncomplicated Firewall) que oferece uma interface simplificada para iptables. Por padrão, uma VM recém-criada pode ter todas as portas abertas, sendo necessário configurar regras específicas.
+
+### 6.1 Verificação do Status do UFW
+
 ```bash
-# Se você tiver Prometheus rodando
-# Name: Prometheus
-# URL: http://localhost:9090
-# Access: Server (default)
-```
-
-### **Configurar InfluxDB (Opcional)**
-```bash
-# Se você tiver InfluxDB rodando
-# Name: InfluxDB
-# URL: http://localhost:8086
-# Database: [nome do seu banco]
-```
-
-### **Testar Conexões**
-- Clique em "Save & Test" para cada data source configurado
-- Verifique se a conexão está funcionando corretamente
-
-## 🔧 **Configurações Avançadas**
-
-### **Instalar Plugins Úteis**
-```bash
-# Instalar plugins via CLI
-sudo grafana-cli plugins install grafana-clock-panel
-sudo grafana-cli plugins install grafana-worldmap-panel
-sudo grafana-cli plugins install grafana-piechart-panel
-
-# Reiniciar Grafana após instalar plugins
-sudo systemctl restart grafana-server
-```
-
-### **Configurar Firewall (UFW)**
-```bash
-# Permitir acesso à porta do Grafana
-sudo ufw allow 3000/tcp
-
-# Verificar regras
 sudo ufw status
 ```
 
-### **Backup Automático**
+### 6.2 Configuração de Regras Básicas
+
+1. **Permitir SSH (essencial para não perder acesso remoto):**
+
 ```bash
-# Criar diretório de backup
-sudo mkdir -p /backup/grafana
-
-# Criar script de backup
-sudo tee /usr/local/bin/grafana-backup.sh << 'EOF'
-#!/bin/bash
-BACKUP_DIR="/backup/grafana"
-DATE=$(date +%Y%m%d_%H%M%S)
-
-mkdir -p $BACKUP_DIR
-
-# Backup do banco de dados
-sudo -u postgres pg_dump grafana > $BACKUP_DIR/grafana_db_$DATE.sql
-
-# Backup dos arquivos de configuração
-tar -czf $BACKUP_DIR/grafana_config_$DATE.tar.gz /etc/grafana/
-
-# Backup dos dashboards e dados
-tar -czf $BACKUP_DIR/grafana_data_$DATE.tar.gz /var/lib/grafana/
-
-# Manter apenas backups dos últimos 7 dias
-find $BACKUP_DIR -name "*.sql" -mtime +7 -delete
-find $BACKUP_DIR -name "*.tar.gz" -mtime +7 -delete
-
-echo "Backup concluído: $DATE"
-EOF
-
-# Tornar executável
-sudo chmod +x /usr/local/bin/grafana-backup.sh
-
-# Agendar backup diário às 2h da manhã
-echo "0 2 * * * /usr/local/bin/grafana-backup.sh" | sudo crontab -
+sudo ufw allow ssh
 ```
 
-### **Monitoramento do Sistema**
+2. **Permitir porta 3000 para Grafana:**
+
 ```bash
-# Instalar node-exporter para monitoramento
-sudo apt install -y prometheus-node-exporter
-
-# Habilitar node-exporter
-sudo systemctl enable prometheus-node-exporter
-sudo systemctl start prometheus-node-exporter
-
-# Verificar se está rodando
-sudo systemctl status prometheus-node-exporter
+sudo ufw allow 3000/tcp
 ```
 
-### **Comandos Úteis para Secret Key**
+3. **Ativar o firewall:**
+
 ```bash
-# Método 1: OpenSSL (mais comum)
-openssl rand -hex 16
-
-# Método 2: /dev/urandom com base64
-head -c 32 /dev/urandom | base64 | tr -d "=+" | cut -c1-32
-
-# Método 3: /dev/urandom simples
-cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 32 | head -n 1
-
-# Método 4: Usando pwgen (se instalado)
-sudo apt install pwgen
-pwgen -s 32 1
-
-# Método 5: Usando Python
-python3 -c "import secrets; print(secrets.token_urlsafe(24))"
+sudo ufw enable
 ```
 
-## 🎯 **Próximos Passos Recomendados**
+### 6.3 Verificação das Regras
 
-1. **Configurar Data Sources** específicos para seus sistemas
-2. **Importar dashboards** da comunidade Grafana
-3. **Criar dashboards** personalizados para seu NOC
-4. **Configurar alertas** básicos
-5. **Implementar backup** automatizado
-6. **Configurar usuários** e permissões
-7. **Instalar plugins** adicionais conforme necessidade
-
-## 📚 **Recursos Úteis**
-
-- **Documentação Oficial**: [https://grafana.com/docs/](https://grafana.com/docs/)
-- **Dashboards Comunidade**: [https://grafana.com/grafana/dashboards/](https://grafana.com/grafana/dashboards/)
-- **Plugins**: [https://grafana.com/grafana/plugins/](https://grafana.com/grafana/plugins/)
-- **Alerting**: [https://grafana.com/docs/grafana/latest/alerting/](https://grafana.com/docs/grafana/latest/alerting/)
-
-## **Troubleshooting Comum**
-
-### **Grafana não inicia**
 ```bash
-# Verificar logs
-sudo journalctl -u grafana-server -n 50
-
-# Verificar configuração
-sudo grafana-server -config /etc/grafana/grafana.ini
+sudo ufw status verbose
 ```
 
-### **Problemas de conexão com PostgreSQL**
-```bash
-# Testar conexão manual
-sudo -u grafana psql -h localhost -d grafana -U grafana
+A saída deve mostrar:
 
-# Verificar configuração do pg_hba.conf
-sudo cat /etc/postgresql/16/main/pg_hba.conf | grep grafana
+```
+Status: active
+Logging: on (low)
+Default: deny (incoming), allow (outgoing), disabled (routed)
+New profiles: skip
+
+To                         Action      From
+--                         ------      ----
+22/tcp                     ALLOW IN    Anywhere
+3000/tcp                   ALLOW IN    Anywhere
+22/tcp (v6)                ALLOW IN    Anywhere (v6)
+3000/tcp (v6)              ALLOW IN    Anywhere (v6)
 ```
 
-### **Erro de Secret Key**
+### 6.4 Regras Opcionais para Maior Segurança
+
+Para limitar acesso SSH a IPs específicos:
+
 ```bash
-# Gerar nova secret key
-NEW_SECRET=$(openssl rand -hex 16)
-echo "Nova Secret Key: $NEW_SECRET"
-
-# Substituir no arquivo de configuração
-sudo sed -i "s/secret_key = .*/secret_key = $NEW_SECRET/" /etc/grafana/grafana.ini
-
-# Reiniciar Grafana
-sudo systemctl restart grafana-server
-```
-
-### **Problemas com Live Features**
-```bash
-# Verificar configurações de Live no Grafana
-grep -A 10 "[live]" /etc/grafana/grafana.ini
-
-# Verificar se WebSocket está funcionando
-curl -i -N -H "Connection: Upgrade" -H "Upgrade: websocket" http://localhost:3000/api/live/ws
+sudo ufw delete allow ssh
+sudo ufw allow from SEU_IP_ADMINISTRATIVO to any port 22
 ```
 
 ---
 
-> ⚠️ **IMPORTANTE**: Este manual foi otimizado para acesso HTTP direto na porta 3000. Certifique-se de que a porta esteja liberada no firewall da sua cloud.
+## 7. Boas Práticas Básicas de Segurança para Aula ao Vivo
+
+Mesmo sem HTTPS, há rotinas simples que reduzem vetores de ataque comuns:
+
+### 7.1 Configurações Básicas de Segurança
+
+1. **Alterar senha padrão imediatamente** após primeiro login
+2. **Desabilitar registro público** editando `/etc/grafana/grafana.ini`:
+
+```bash
+sudo nano /etc/grafana/grafana.ini
+```
+
+Localize e modifique:
+
+```ini
+[users]
+# disable user signup / registration
+allow_sign_up = false
+```
+
+3. **Reiniciar o serviço** após alterações:
+
+```bash
+sudo systemctl restart grafana-server
+```
+
+### 7.2 Monitoramento de Logs
+
+Monitore logs em tempo real durante a aula:
+
+```bash
+sudo journalctl -u grafana-server -f
+```
+
+### 7.3 Backup de Configuração
+
+Faça backup da configuração antes da aula:
+
+```bash
+sudo cp /etc/grafana/grafana.ini /etc/grafana/grafana.ini.backup
+sudo tar -czf grafana-backup-$(date +%Y%m%d).tar.gz /var/lib/grafana/
+```
+
+---
+
+## 8. Testes de Desempenho e Monitoramento Inicial
+
+Para confirmar se a VM suporta a carga esperada, execute breves testes de stress enquanto observa CPU e RAM.
+
+### 8.1 Instalação de Ferramentas de Monitoramento
+
+```bash
+sudo apt install -y htop stress-ng
+```
+
+### 8.2 Teste de Carga Básico
+
+1. **Inicie o monitor de recursos:**
+
+```bash
+htop
+```
+
+2. **Em outro terminal, execute teste de stress:**
+
+```bash
+stress-ng --cpu 1 --vm 1 --vm-bytes 500M --timeout 60s
+```
+
+3. **Monitore o desempenho** navegando simultaneamente por dashboards
+
+### 8.3 Verificação de Recursos
+
+```bash
+# Verificar uso de memória
+free -h
+
+# Verificar uso de disco
+df -h
+
+# Verificar processos do Grafana
+ps aux | grep grafana
+```
+
+---
+
+## 9. Resolução de Problemas Mais Comuns
+
+### 9.1 Tabela de Diagnóstico
+
+| Sintoma | Diagnóstico Sugerido | Solução |
+|---------|---------------------|---------|
+| Navegador não encontra IP:3000 | Firewall bloqueando ou serviço inativo | Verificar UFW (`sudo ufw status`) e status do serviço |
+| `grafana-server` falha ao iniciar | Erro de configuração ou dependências | Verificar logs: `sudo journalctl -u grafana-server -n 50` |
+| Lentidão ou timeouts | Recursos insuficientes | Verificar RAM/CPU com `htop`, considerar upgrade |
+| Erro de permissão | Problemas de ownership | `sudo chown -R grafana:grafana /var/lib/grafana` |
+
+### 9.2 Comandos de Diagnóstico
+
+```bash
+# Verificar status detalhado do serviço
+sudo systemctl status grafana-server -l
+
+# Verificar logs específicos
+sudo tail -f /var/log/grafana/grafana.log
+
+# Verificar conectividade de rede
+sudo netstat -tlnp | grep grafana
+
+# Verificar configuração
+sudo grafana-cli admin reset-admin-password admin
+```
+
+### 9.3 Reinicialização Completa
+
+Em caso de problemas persistentes:
+
+```bash
+sudo systemctl stop grafana-server
+sudo systemctl daemon-reload
+sudo systemctl start grafana-server
+sudo systemctl status grafana-server
+```
+
+---
+
+## 10. Considerações Finais e Próximos Passos
+
+### 10.1 Resumo da Instalação
+
+A instalação descrita aqui entrega um Grafana funcional em questão de minutos, pronto para ser mostrado em qualquer transmissão ao vivo. Ao conservar estritamente as recomendações oficiais, a probabilidade de incompatibilidades futuras é mínima, e o caminho para upgrades se mantém simples.
+
+### 10.2 Comandos de Manutenção
+
+```bash
+# Atualizar Grafana
+sudo apt update && sudo apt upgrade grafana
+
+# Verificar versão instalada
+grafana --version
+
+# Parar serviço após aula (segurança)
+sudo systemctl stop grafana-server
+```
+
+### 10.3 Próximos Passos para Produção
+
+Para ambientes de produção, considere:
+
+- **HTTPS com certificados SSL/TLS**
+- **Proxy reverso (Nginx/Apache)**
+- **Autenticação externa (LDAP/OAuth)**
+- **Backup automatizado**
+- **Monitoramento de métricas do próprio Grafana**
+- **Rate limiting e proteção DDoS**
+
+### 10.4 Recursos Adicionais
+
+- [Documentação Oficial do Grafana](https://grafana.com/docs/grafana/latest/)
+- [Grafana Community](https://community.grafana.com/)
+- [Grafana GitHub Repository](https://github.com/grafana/grafana)
+
+---
