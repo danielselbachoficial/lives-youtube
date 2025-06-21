@@ -33,69 +33,27 @@ Implementar um sistema de monitoramento Zabbix completo para NOC (Network Operat
 
 ### **Pré-requisitos**
 
-|
- Componente 
-|
- Especificação 
-|
-|
-------------
-|
----------------
-|
-|
-**
-Sistema Operacional
-**
-|
- Debian 12 (Bookworm) 
-|
-|
-**
-RAM
-**
-|
- Mínimo 2GB (Recomendado 4GB+) 
-|
-|
-**
-CPU
-**
-|
- Mínimo 2 vCPUs 
-|
-|
-**
-Storage
-**
-|
- Mínimo 20GB (Recomendado 50GB+) 
-|
-|
-**
-Acesso
-**
-|
- Root ou usuário com sudo 
-|
-|
-**
-Conectividade
-**
-|
- Internet para download de pacotes 
-|
-|
-**
-Portas
-**
-|
- 80, 443, 8080, 10051, 5432 
-|
+| Componente            | Especificação                     |
+|-----------------------|-----------------------------------|
+| **Sistema Operacional** | Debian 12 (Bookworm)              |
+| **RAM**               | Mínimo 2GB (Recomendado 4GB+)     |
+| **CPU**               | Mínimo 2 vCPUs                    |
+| **Storage**           | Mínimo 20GB (Recomendado 50GB+)   |
+| **Acesso**            | Root ou usuário com sudo          |
+| **Conectividade**     | Internet para download de pacotes |
+| **Portas**            | 80, 443, 8080, 10051, 5432        |
 
 ### **Arquitetura da Solução**
-┌─────────────────┐ ┌─────────────────┐ ┌─────────────────┐ │ Zabbix Web │ │ Zabbix Server │ │ PostgreSQL │ │ (Nginx+PHP) │◄──►│ (Backend) │◄──►│ (Database) │ └─────────────────┘ └─────────────────┘ └─────────────────┘ │ │ │ ▼ ▼ ▼ Port 8080 Port 10051 Port 5432
-
+```
+┌─────────────────┐   ┌─────────────────┐   ┌─────────────────┐
+│    Zabbix Web   │   │  Zabbix Server  │   │   PostgreSQL    │
+│   (Nginx+PHP)   │◄──►│    (Backend)    │◄──►│    (Database)   │
+└─────────────────┘   └─────────────────┘   └─────────────────┘
+         │                     │                     │
+         │                     │                     │
+         ▼                     ▼                     ▼
+     Port 8080             Port 10051            Port 5432
+```
 
 ---
 
@@ -172,7 +130,7 @@ nano /etc/zabbix/zabbix_server.conf
 ```
 
 ### Configurações obrigatórias:
-```bash
+```ini
 DBHost=localhost
 DBName=zabbix
 DBUser=zabbix
@@ -191,7 +149,7 @@ nano /etc/zabbix/nginx.conf
 ```
 
 Remover tudo e colar a informação abaixo:
-```bash
+```nginx
 server {
     listen 80;
     server_name SEU_IP_PUBLICO;  # Substitua pelo seu IP público
@@ -268,7 +226,7 @@ nginx -t
 ### **k) Método Rápido - Aplicar Todas as Configurações**
 ```bash
 # Fazer backup
-cp /etc/php/8.2/fmp/php.ini /etc/php/8.2/fpm/php.ini.backup
+cp /etc/php/8.2/fpm/php.ini /etc/php/8.2/fpm/php.ini.backup
 
 # Aplicar todas as configurações necessárias
 sed -i 's/max_execution_time = 30/max_execution_time = 300/' /etc/php/8.2/fpm/php.ini
@@ -279,17 +237,16 @@ sed -i 's/post_max_size = 8M/post_max_size = 16M/' /etc/php/8.2/fpm/php.ini
 sed -i 's/;date.timezone =/date.timezone = America\/Sao_Paulo/' /etc/php/8.2/fpm/php.ini
 ```
 
-Ou editar manualmente:
+Ou editar manualmente as seguintes configurações de **Parâmetro** com seu **Valor Necessário**:
 
-Parâmetro	com Valor Necessário
-- max_execution_time= 300
-- max_input_time= 300
-- max_input_vars=	10000
-- memory_limit=	256M
-- post_max_size=	16M
-- date.timezone=	America/Sao_Paulo
+*   `max_execution_time= 300`
+*   `max_input_time= 300`
+*   `max_input_vars= 10000`
+*   `memory_limit= 256M`
+*   `post_max_size= 16M`
+*   `date.timezone= America/Sao_Paulo`
 
-###🚀 Inicialização dos Serviços
+### 🚀 Inicialização dos Serviços
 
 #### **l) Iniciar e Habilitar Serviços**
 ```bash
@@ -301,7 +258,7 @@ systemctl enable zabbix-server zabbix-agent2 nginx php8.2-fpm postgresql
 ```
 
 #### ✅ Verificações Pós-Instalação
-Status dos Serviços
+#### Status dos Serviços
 ```bash
 # Verificar se todos os serviços estão ativos
 systemctl status zabbix-server zabbix-agent2 nginx php8.2-fpm postgresql
@@ -332,40 +289,40 @@ sudo -u zabbix psql -d zabbix -c "SELECT version();"
 ### 🌐 Configuração Web (Setup Wizard)
 
 ### Acesso à Interface
-URL de acesso: http://SEU_IP_PUBLICO/setup.php
+URL de acesso: `http://SEU_IP_PUBLICO/setup.php`
 
 #### Passo a Passo do Setup:
 
-##### 1. Verificar Pré-requisitos
-- ✅ Todos os requisitos devem estar em verde
-- ❌ Se algum estiver vermelho, revisar configurações PHP
+1.  **Verificar Pré-requisitos**
+    *   ✅ Todos os requisitos devem estar em verde
+    *   ❌ Se algum estiver vermelho, revisar configurações PHP
 
-##### 2. Configurar Banco de Dados
-- Database type: PostgreSQL
-- Database host: localhost
-- Database port: 5432
-- Database name: zabbix
-- Database schema: (deixar vazio)
-- User: zabbix
-- Password: [sua senha definida anteriormente]
+2.  **Configurar Banco de Dados**
+    *   Database type: PostgreSQL
+    *   Database host: `localhost`
+    *   Database port: `5432`
+    *   Database name: `zabbix`
+    *   Database schema: (deixar vazio)
+    *   User: `zabbix`
+    *   Password: `[sua senha definida anteriormente]`
 
-##### 3. Configurações do Zabbix Server
-- Host: localhost
-- Port: 10051
-- Name: Zabbix Server NOC
+3.  **Configurações do Zabbix Server**
+    *   Host: `localhost`
+    *   Port: `10051`
+    *   Name: `Zabbix Server NOC`
 
-##### 4. Configurações Finais
-- Fuso horário: America/Sao_Paulo
-- Tema: Blue (recomendado)
+4.  **Configurações Finais**
+    *   Fuso horário: `America/Sao_Paulo`
+    *   Tema: Blue (recomendado)
 
 ### 🔐 Primeiro Acesso
 
 #### Credenciais Padrão
-- URL: http://SEU_IP:8080
-- Usuário: Admin
-- Senha: zabbix
+*   URL: `http://SEU_IP:8080`
+*   Usuário: `Admin`
+*   Senha: `zabbix`
 
-- ⚠️ IMPORTANTE: Altere a senha padrão imediatamente após o primeiro login!
+**⚠️ IMPORTANTE**: Altere a senha padrão imediatamente após o primeiro login!
 
 ### 🔥 Configuração de Firewall
 ```bash
