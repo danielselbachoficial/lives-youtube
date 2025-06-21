@@ -105,15 +105,34 @@ Portas
 ## 🚀 **Preparação do Ambiente**
 
 ### **a) Instalar Dependências Básicas**
-
-#### Atualizar sistema e instalar ferramentas essenciais
 ```bash
+# Atualizar sistema e instalar ferramentas essenciais
 apt update && apt install -y sudo wget curl
 ```
 ### **b) Configurar Repositório Zabbix**
-#### Download e instalação do repositório oficial
 ```bash
+# Download e instalação do repositório oficial
 wget https://repo.zabbix.com/zabbix/7.0/debian/pool/main/z/zabbix-release/zabbix-release_latest_7.0+debian12_all.deb
 dpkg -i zabbix-release_latest_7.0+debian12_all.deb
 apt update
 ```
+
+🔧 Instalação dos Componentes
+### **c) Instalar Zabbix Server e Dependências**
+```bash
+# Instalação completa do Zabbix com PostgreSQL
+apt install -y zabbix-server-pgsql zabbix-frontend-php php8.2-pgsql \
+               zabbix-nginx-conf zabbix-sql-scripts zabbix-agent2 \
+               postgresql postgresql-contrib
+```
+
+### **d) Instalar Plugins do Zabbix Agent 2**
+```bash
+# Plugins para monitoramento avançado
+apt install -y zabbix-agent2-plugin-mongodb \
+               zabbix-agent2-plugin-mssql \
+               zabbix-agent2-plugin-postgresql
+```
+
+🗄️ Configuração do Banco de Dados
+### **e) e) Preparar PostgreSQL**
