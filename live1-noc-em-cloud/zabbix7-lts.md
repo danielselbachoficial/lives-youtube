@@ -1,4 +1,3 @@
-```markdown
 # 📊 NOC em Cloud - Manual Completo Grafana 12.0.1
 
 > **Manual Técnico**: Implementação completa de visualização com Grafana 12.0.1 + PostgreSQL no Ubuntu Server 24.04 LTS
@@ -588,6 +587,3 @@ curl -i -N -H "Connection: Upgrade" -H "Upgrade: websocket" http://localhost:300
 ---
 
 > ⚠️ **IMPORTANTE**: Este manual foi otimizado para acesso HTTP direto na porta 3000. Certifique-se de que a porta esteja liberada no firewall da sua cloud.
-
-> 📝 **NOTA**: Manual otimizado para Ubuntu Server 24.04 LTS com Grafana 12.0.1 e PostgreSQL 16.
-```
