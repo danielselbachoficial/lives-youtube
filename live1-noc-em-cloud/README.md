@@ -7,4 +7,4 @@ Voltado para administradores de rede, profissionais de TI e estudantes que busca
 live1-noc-em-cloud/
 ├── README.md                    # Você está aqui
 ├── zabbix-7-lts.md              # Instalação e configuração do Zabbix 7 LTS
-├── grafana.md                   # Instalação e configuração do Grafana
+└── grafana.md                   # Instalação e configuração do Grafana           
