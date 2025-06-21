@@ -546,7 +546,7 @@ python3 -c "import secrets; print(secrets.token_urlsafe(24))"
 - **Plugins**: [https://grafana.com/grafana/plugins/](https://grafana.com/grafana/plugins/)
 - **Alerting**: [https://grafana.com/docs/grafana/latest/alerting/](https://grafana.com/docs/grafana/latest/alerting/)
 
-## 🐛 **Troubleshooting Comum**
+## **Troubleshooting Comum**
 
 ### **Grafana não inicia**
 ```bash
