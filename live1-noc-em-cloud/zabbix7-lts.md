@@ -117,7 +117,7 @@ dpkg -i zabbix-release_latest_7.0+debian12_all.deb
 apt update
 ```
 
-🔧 Instalação dos Componentes
+## 🔧 Instalação dos Componentes
 ### **c) Instalar Zabbix Server e Dependências**
 ```bash
 # Instalação completa do Zabbix com PostgreSQL
@@ -134,5 +134,59 @@ apt install -y zabbix-agent2-plugin-mongodb \
                zabbix-agent2-plugin-postgresql
 ```
 
-🗄️ Configuração do Banco de Dados
-### **e) e) Preparar PostgreSQL**
+## 🗄️ Configuração do Banco de Dados
+### **e) Preparar PostgreSQL**
+```bash
+# Inicializar e habilitar PostgreSQL
+systemctl start postgresql
+systemctl enable postgresql
+
+# Navegar para diretório seguro
+cd /var/lib/postgresql
+```
+
+### **f) Criar Usuário e Banco**
+```bash
+# Criar usuário zabbix (será solicitada senha)
+sudo -u postgres createuser --pwprompt zabbix
+
+# Criar banco de dados
+sudo -u postgres createdb -O zabbix zabbix
+
+# Verificar criação
+sudo -u postgres psql -c "\du" | grep zabbix
+sudo -u postgres psql -c "\l" | grep zabbix
+```
+
+### **g) Importar Schema do Zabbix**
+```bash
+# Importar estrutura inicial (inserir senha quando solicitado)
+zcat /usr/share/zabbix-sql-scripts/postgresql/server.sql.gz | sudo -u zabbix psql zabbix
+```
+
+## ⚙️ Configuração do Zabbix Server
+### **h) Editar Configuração Principal**
+```bash
+# Fazer backup da configuração
+cp /etc/zabbix/zabbix_server.conf /etc/zabbix/zabbix_server.conf.backup
+
+# Editar arquivo de configuração
+nano /etc/zabbix/zabbix_server.conf
+```
+
+### Configurações obrigatórias:
+```bash
+DBHost=localhost
+DBName=zabbix
+DBUser=zabbix
+DBPassword=sua_senha_aqui
+DBPort=5432
+```
+
+### 🌐 Configuração do Nginx
+
+### **i) Configurar Servidor Web**
+```bash
+# Editar configuração do Nginx para Zabbix
+nano /etc/zabbix/nginx.conf
+```
