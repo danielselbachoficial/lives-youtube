@@ -279,32 +279,32 @@ URL: http://SEU_IP:8080/setup.php
 
 #### Passo a Passo do Setup:
 
-1. Verificar Pré-requisitos
-✅ Todos os requisitos devem estar em verde
-❌ Se algum estiver vermelho, revisar configurações PHP
+##### 1. Verificar Pré-requisitos
+- ✅ Todos os requisitos devem estar em verde
+- ❌ Se algum estiver vermelho, revisar configurações PHP
 
-2. Configurar Banco de Dados
-Database type: PostgreSQL
-Database host: localhost
-Database port: 5432
-Database name: zabbix
-Database schema: (deixar vazio)
-User: zabbix
-Password: [sua senha definida anteriormente]
+##### 2. Configurar Banco de Dados
+- Database type: PostgreSQL
+- Database host: localhost
+- Database port: 5432
+- Database name: zabbix
+- Database schema: (deixar vazio)
+- User: zabbix
+- Password: [sua senha definida anteriormente]
 
-3. Configurações do Zabbix Server
-Host: localhost
-Port: 10051
-Name: Zabbix Server NOC
+##### 3. Configurações do Zabbix Server
+- Host: localhost
+- Port: 10051
+- Name: Zabbix Server NOC
 
-4. Configurações Finais
-Fuso horário: America/Sao_Paulo
-Tema: Blue (recomendado)
+##### 4. Configurações Finais
+- Fuso horário: America/Sao_Paulo
+- Tema: Blue (recomendado)
 
 ### 🔐 Primeiro Acesso
 
 #### Credenciais Padrão
-URL: http://SEU_IP:8080
-Usuário: Admin
-Senha: zabbix
+- URL: http://SEU_IP:8080
+- Usuário: Admin
+- Senha: zabbix
 ⚠️ IMPORTANTE: Altere a senha padrão imediatamente após o primeiro login!
