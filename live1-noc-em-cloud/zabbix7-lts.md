@@ -225,10 +225,10 @@ sed -i 's/;date.timezone =/date.timezone = America\/Sao_Paulo/' /etc/php/8.2/fpm
 Ou editar manualmente:
 
 Parâmetro	com Valor Necessário
-max_execution_time= 300
-max_input_time= 300
-max_input_vars=	10000
-memory_limit=	256M
-post_max_size=	16M
-date.timezone=	America/Sao_Paulo
+- max_execution_time= 300
+- max_input_time= 300
+- max_input_vars=	10000
+- memory_limit=	256M
+- post_max_size=	16M
+- date.timezone=	America/Sao_Paulo
 
