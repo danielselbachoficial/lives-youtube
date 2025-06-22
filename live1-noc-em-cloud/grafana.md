@@ -133,7 +133,7 @@ sudo apt install grafana
 Confirme que o pacote foi instalado corretamente:
 
 ```bash
-grafana --version
+grafana-cli --version
 ```
 
 ---
@@ -393,7 +393,7 @@ A instalação descrita aqui entrega um Grafana funcional em questão de minutos
 sudo apt update && sudo apt upgrade grafana
 
 # Verificar versão instalada
-grafana --version
+grafana-cli --version
 
 # Parar serviço após aula (segurança)
 sudo systemctl stop grafana-server
