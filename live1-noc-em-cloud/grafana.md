@@ -48,7 +48,7 @@ Ainda que o Grafana seja leve, dimensionar corretamente CPU, RAM e armazenamento
 - **Rede**: Acesso à internet para download de pacotes
 
 ### Arquitetura da Solução
-Arquitetura Correta de Acordo com o Manual:
+```
 ┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
 │   Grafana Web   │    │   Data Sources  │    │   Databases     │
 │   (Frontend)    │◄──►│     (Zabbix)    │◄──►│   (SQLite)      │
@@ -59,7 +59,7 @@ Arquitetura Correta de Acordo com o Manual:
          ▼                     ▼                      ▼
      Port 3000            APIs/Queries            Sem Porta
                                               (Arquivo .db)
-
+```
 ---
 
 ## 3. Preparação do Ambiente Ubuntu Server 24.04 LTS
