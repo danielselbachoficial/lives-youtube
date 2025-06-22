@@ -3,7 +3,6 @@
 > **Manual Técnico**: Implementação completa de visualização com Grafana 12.0.1 no Ubuntu Server 24.04 LTS
 
 [![Grafana](https://img.shields.io/badge/Grafana-12.0.1-orange?style=for-the-badge&logo=grafana)](https://grafana.com/)
-[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-blue?style=for-the-badge&logo=postgresql)](https://www.postgresql.org/)
 [![Ubuntu](https://img.shields.io/badge/Ubuntu-24.04_LTS-orange?style=for-the-badge&logo=ubuntu)](https://ubuntu.com/)
 
 ---
