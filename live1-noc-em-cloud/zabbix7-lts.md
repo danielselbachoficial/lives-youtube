@@ -45,14 +45,14 @@ Implementar um sistema de monitoramento Zabbix completo para NOC (Network Operat
 
 ### **Arquitetura da Solução**
 ```
-┌─────────────────┐   ┌─────────────────┐   ┌─────────────────┐
-│    Zabbix Web   │   │  Zabbix Server  │   │   PostgreSQL    │
-│   (Nginx+PHP)   │◄──►│    (Backend)    │◄──►│    (Database)   │
-└─────────────────┘   └─────────────────┘   └─────────────────┘
-         │                     │                     │
-         │                     │                     │
-         ▼                     ▼                     ▼
-     Port 8080             Port 10051            Port 5432
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│    Zabbix Web   │    │  Zabbix Server  │    │   PostgreSQL    │
+│   (Nginx+PHP)   │◄──►│    (Backend)    │◄──►│   (Database)    │
+└─────────────────┘    └─────────────────┘    └─────────────────┘
+         │                     │                      │
+         │                     │                      │
+         ▼                     ▼                      ▼
+     Port 8080             Port 10051             Port 5432
 ```
 
 ---
