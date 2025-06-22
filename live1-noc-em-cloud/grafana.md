@@ -48,16 +48,17 @@ Ainda que o Grafana seja leve, dimensionar corretamente CPU, RAM e armazenamento
 - **Rede**: Acesso à internet para download de pacotes
 
 ### Arquitetura da Solução
+Arquitetura Correta de Acordo com o Manual:
 ┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│   Grafana Web   │    │   Data Source   │    │   Database      │
-│   (Frontend)    │◄──►│    (Zabbix)     │◄──►│   (SQLite)      │
+│   Grafana Web   │    │   Data Sources  │    │   Databases     │
+│   (Frontend)    │◄──►│     (Zabbix)    │◄──►│   (SQLite)      │
 │                 │    │                 │    │   Arquivo Local │
 └─────────────────┘    └─────────────────┘    └─────────────────┘
          │                     │                      │
          │                     │                      │
          ▼                     ▼                      ▼
-     Port 3000            Zabbix API              Sem Porta
-                         (Port 80/443)          (Arquivo .db)
+     Port 3000            APIs/Queries            Sem Porta
+                                              (Arquivo .db)
 
 ---
 
