@@ -22,11 +22,11 @@
 
 ---
 
-## 1. Introdução e Contexto
+## 1. 🎯 Objetivo
+Objetivo
+Implementar um sistema de visualização e monitoramento Grafana completo para ambientes de produção em VM cloud, proporcionando dashboards interativos e análise de dados em tempo real.
 
-Instalar o Grafana em uma máquina virtual Ubuntu Server 24.04 LTS que possua apenas um endereço IP público expõe o serviço diretamente à internet. 
 
-A estrutura deste manual privilegia uma narrativa completa, conduzindo o leitor desde a criação do ambiente até a verificação pós-instalação, sem pular etapas implícitas. Todo comando foi extraído ou validado na [documentação oficial do Grafana](https://grafana.com/docs/grafana/latest/setup-grafana/installation/debian/) e testado em Ubuntu Server 24.04 LTS (Noble Numbat).
 
 ---
 
@@ -46,6 +46,18 @@ Ainda que o Grafana seja leve, dimensionar corretamente CPU, RAM e armazenamento
 - **CPU**: Qualquer arquitetura suportada pelo Ubuntu (x86_64, ARM64)
 - **Armazenamento**: Mínimo 1 GB de espaço livre
 - **Rede**: Acesso à internet para download de pacotes
+
+### Arquitetura da Solução
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│   Grafana Web   │    │   Data Source   │    │   Database      │
+│   (Frontend)    │◄──►│    (Zabbix)     │◄──►│   (SQLite)      │
+│                 │    │                 │    │   Arquivo Local │
+└─────────────────┘    └─────────────────┘    └─────────────────┘
+         │                     │                      │
+         │                     │                      │
+         ▼                     ▼                      ▼
+     Port 3000            Zabbix API              Sem Porta
+                         (Port 80/443)          (Arquivo .db)
 
 ---
 
