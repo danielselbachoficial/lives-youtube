@@ -7,5 +7,7 @@ Voltado para administradores de rede, profissionais de TI e estudantes que busca
 ## 📂 Estrutura do Repositório
     live1-noc-em-cloud/
     ├── README.md                    # Você está aqui
-    ├── zabbix-7-lts.md              # Instalação e configuração do Zabbix 7 LTS
     └── grafana.md                   # Instalação e configuração do Grafana
+    └── zabbix-7-lts.md              # Instalação e configuração do Zabbix 7 LTS
+    └── zabbix-proxy-7-lts.md        # Instalação e configuração do Zabbix Proxy 7 LTS
+    └── zabbix-agent2-windows.md     # Instalação e configuração do Zabbix Agent 2 no Windows
