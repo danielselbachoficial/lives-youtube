@@ -163,7 +163,7 @@ EXIT;
 
 ```bash
 # Importar schema inicial do Zabbix Proxy
-mysql -u zabbix_proxy -p zabbix_proxy < /usr/share/zabbix-sql-scripts/mysql/proxy.sql
+cat /usr/share/zabbix-sql-scripts/mysql/proxy.sql | mysql --default-character-set=utf8mb4 -uzabbix_proxy -p zabbix_proxy
 
 # Verificar importação
 mysql -u zabbix_proxy -p zabbix_proxy -e "SHOW TABLES;"
