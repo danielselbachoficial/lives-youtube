@@ -126,13 +126,6 @@ zabbix_proxy --version
 zabbix_agent2 --version
 ```
 
-### Instalar Plugins do Zabbix Agent 2 (Opcional)
-
-```bash
-# Plugins para monitoramento avançado
-sudo apt install -y zabbix-agent2-plugin-mysql
-```
-
 ## 🗄️ Configuração do Banco de Dados
 
 ### Configurar MySQL para Zabbix Proxy
