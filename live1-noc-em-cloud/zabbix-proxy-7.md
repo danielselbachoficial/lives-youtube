@@ -67,12 +67,7 @@ lsb_release -a
 
 ```bash
 # Instalar ferramentas essenciais
-sudo apt install -y \
-    wget \
-    curl \
-    gnupg2 \
-    lsb-release \
-    software-properties-common \
+sudo apt install -y wget curl gnupg2 lsb-release software-properties-common
 ```
 
 ### Configurar Repositório Zabbix
