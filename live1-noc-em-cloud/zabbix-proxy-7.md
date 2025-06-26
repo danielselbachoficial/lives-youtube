@@ -54,21 +54,41 @@ graph LR
 
 ## 🚀 Preparação do Ambiente
 
-### Instalar Dependências Básicas
+### Atualização do sistema
+```bash
+# Atualizar lista de pacotes e sistema
+sudo apt update && sudo apt upgrade -y
+
+# Verificar versão do sistema
+lsb_release -a
+```
+
+### Instalar Dependências
 
 ```bash
-# Atualizar sistema e instalar ferramentas essenciais
-sudo apt update && sudo apt upgrade -y
-sudo apt install -y wget curl gnupg2 lsb-release software-properties-common
+# Instalar ferramentas essenciais
+sudo apt install -y \
+    wget \
+    curl \
+    gnupg2 \
+    lsb-release \
+    software-properties-common \
 ```
 
 ### Configurar Repositório Zabbix
 
 ```bash
-# Download e instalação do repositório oficial
+# Download do pacote de release do Zabbix 7.0
 wget https://repo.zabbix.com/zabbix/7.0/ubuntu/pool/main/z/zabbix-release/zabbix-release_latest_7.0+ubuntu24.04_all.deb
+
+# Instalação do repositório
 sudo dpkg -i zabbix-release_latest_7.0+ubuntu24.04_all.deb
+
+# Atualização do cache de pacotes
 sudo apt update
+
+# Limpeza do arquivo temporário
+rm zabbix-release_latest_7.0+ubuntu24.04_all.deb
 ```
 
 ## 🔧 Instalação dos Componentes
@@ -76,10 +96,16 @@ sudo apt update
 ### Instalar MySQL Server
 
 ```bash
-# Instalação do MySQL Server
+# Instalação do MySQL Server e cliente
 sudo apt install -y mysql-server mysql-client
 
-# Executar configuração segura do MySQL
+# Verificar status do serviço
+sudo systemctl status mysql
+```
+
+### Configuração de Segurança do MySQL
+```bash
+# Executar script de configuração segura
 sudo mysql_secure_installation
 ```
 
@@ -94,17 +120,22 @@ sudo mysql_secure_installation
 ### Instalar Zabbix Proxy e Dependências
 
 ```bash
-# Instalação do Zabbix Proxy com MySQL
-sudo apt install -y zabbix-proxy-mysql zabbix-sql-scripts zabbix-agent2
+## Instalação dos componentes principais
+sudo apt install -y \
+    zabbix-proxy-mysql \
+    zabbix-sql-scripts \
+    zabbix-agent2
+
+# Verificar versões instaladas
+zabbix_proxy --version
+zabbix_agent2 --version
 ```
 
 ### Instalar Plugins do Zabbix Agent 2 (Opcional)
 
 ```bash
-# Plugins para monitoramento avançado local
-sudo apt install -y zabbix-agent2-plugin-mongodb \\
-                    zabbix-agent2-plugin-mysql \\
-                    zabbix-agent2-plugin-postgresql
+# Plugins para monitoramento avançado
+sudo apt install -y zabbix-agent2-plugin-mysql
 ```
 
 ## 🗄️ Configuração do Banco de Dados
@@ -119,13 +150,14 @@ sudo mysql -u root -p
 ### Criar Banco e Usuário para Proxy
 
 ```sql
--- Criar banco de dados para o proxy
+-- Criar banco de dados com charset correto
 CREATE DATABASE zabbix_proxy CHARACTER SET utf8mb4 COLLATE utf8mb4_bin;
 
--- Criar usuário para o proxy
-CREATE USER 'zabbix_proxy'@'localhost' IDENTIFIED BY 'SuaSenhaSeguraAqui';
+-- Criar usuário específico para o proxy
+-- ⚠️ SUBSTITUA 'SuaSenhaSeguraAqui' por uma senha forte
+CREATE USER 'zabbix_proxy'@'localhost' IDENTIFIED BY '@dmin123';
 
--- Conceder privilégios
+-- Conceder privilégios necessários
 GRANT ALL PRIVILEGES ON zabbix_proxy.* TO 'zabbix_proxy'@'localhost';
 
 -- Aplicar mudanças
@@ -142,25 +174,32 @@ EXIT;
 ### Importar Schema do Zabbix Proxy
 
 ```bash
-# Importar estrutura inicial do proxy
+# Importar schema inicial do Zabbix Proxy
 zcat /usr/share/zabbix-sql-scripts/mysql/proxy.sql.gz | mysql -u zabbix_proxy -p zabbix_proxy
+
+# Verificar importação
+mysql -u zabbix_proxy -p zabbix_proxy -e "SHOW TABLES;"
 ```
 
 ### Otimizar Configuração do MySQL
 
 ```bash
-# Editar configuração do MySQL
+# Backup da configuração original
+sudo cp /etc/mysql/mysql.conf.d/mysqld.cnf /etc/mysql/mysql.conf.d/mysqld.cnf.backup
+
+# Editar configuração
 sudo nano /etc/mysql/mysql.conf.d/mysqld.cnf
 ```
 
 Adicionar as seguintes configurações na seção **[mysqld]**:
 
 ```ini
-# Configurações otimizadas para Zabbix Proxy
-innodb_buffer_pool_size = 256M
+[mysqld]
+# Configurações de performance
+innodb_buffer_pool_size = 512M          # 50-70% da RAM disponível
 innodb_log_file_size = 64M
 innodb_log_buffer_size = 16M
-innodb_flush_log_at_trx_commit = 2
+innodb_flush_log_at_trx_commit = 2       # Performance vs. durabilidade
 innodb_flush_method = O_DIRECT
 
 # Configurações de conexão
@@ -168,12 +207,7 @@ max_connections = 200
 wait_timeout = 28800
 interactive_timeout = 28800
 
-# Configurações de cache
-query_cache_size = 64M
-query_cache_type = 1
-query_cache_limit = 4M
-
-# Configurações de log
+# Configurações de log para troubleshooting
 slow_query_log = 1
 slow_query_log_file = /var/log/mysql/slow.log
 long_query_time = 2
@@ -181,6 +215,9 @@ long_query_time = 2
 # Configurações de charset
 character-set-server = utf8mb4
 collation-server = utf8mb4_bin
+
+# Configurações de segurança
+bind-address = 127.0.0.1                # Apenas conexões locais
 ```
 
 ### Reiniciar MySQL
@@ -189,6 +226,9 @@ collation-server = utf8mb4_bin
 # Reiniciar MySQL para aplicar configurações
 sudo systemctl restart mysql
 sudo systemctl enable mysql
+
+# Verificar status
+sudo systemctl status mysql
 ```
 
 ## ⚙️ Configuração do Zabbix Proxy
@@ -196,77 +236,78 @@ sudo systemctl enable mysql
 ### Editar Configuração Principal
 
 ```bash
-# Fazer backup da configuração
+# Backup da configuração original
 sudo cp /etc/zabbix/zabbix_proxy.conf /etc/zabbix/zabbix_proxy.conf.backup
 
-# Editar arquivo de configuração
+# Editar configuração
 sudo nano /etc/zabbix/zabbix_proxy.conf
 ```
 
 ### Configurações Obrigatórias
 
 ```ini
-# Configurações do Proxy
-ProxyMode=0                    # 0=active, 1=passive
-Server=IP_DO_ZABBIX_SERVER    # IP do seu Zabbix Server
+# === CONFIGURAÇÕES BÁSICAS ===
+ProxyMode=0                              # 0=ativo, 1=passivo
+Server=IP_DO_ZABBIX_SERVER              # ⚠️ SUBSTITUIR pelo IP real
 ServerPort=10051
-Hostname=NOME_DO_PROXY        # Nome único para identificar o proxy
+Hostname=NOME_DO_PROXY                  # ⚠️ SUBSTITUIR por nome único
 
-# Configurações de Rede
+# === CONFIGURAÇÕES DE REDE ===
 ListenPort=10051
 ListenIP=0.0.0.0
 
-# Configurações do Banco de Dados MySQL
+# === CONFIGURAÇÕES DO BANCO DE DADOS ===
 DBHost=localhost
 DBName=zabbix_proxy
 DBUser=zabbix_proxy
-DBPassword=SuaSenhaSeguraAqui
+DBPassword=SuaSenhaSeguraAqui           # ⚠️ SUBSTITUIR pela senha real
 DBPort=3306
 DBSocket=/var/run/mysqld/mysqld.sock
 
-# Configurações de Performance
-StartPollers=5
-StartPollersUnreachable=1
-StartTrappers=5
-StartPingers=1
-StartDiscoverers=1
-StartHTTPPollers=1
+# === CONFIGURAÇÕES DE PERFORMANCE ===
+StartPollers=10                         # Processos para coleta de dados
+StartPollersUnreachable=2               # Processos para hosts inalcançáveis
+StartTrappers=5                         # Processos para trapper items
+StartPingers=1                          # Processos para ping ICMP
+StartDiscoverers=1                      # Processos para descoberta
+StartHTTPPollers=1                      # Processos para monitoramento HTTP
 
-# Configurações de Cache
-CacheSize=32M
-HistoryCacheSize=16M
-HistoryIndexCacheSize=4M
-TrendCacheSize=4M
-ValueCacheSize=8M
+# === CONFIGURAÇÕES DE CACHE ===
+CacheSize=64M                           # Cache de configuração
+HistoryCacheSize=32M                    # Cache de histórico
+HistoryIndexCacheSize=8M                # Cache de índice de histórico
+TrendCacheSize=8M                       # Cache de tendências
+ValueCacheSize=16M                      # Cache de valores
 
-# Configurações de Timeout
-Timeout=4
-TrapperTimeout=300
-UnreachablePeriod=45
-UnavailableDelay=60
-UnreachableDelay=15
+# === CONFIGURAÇÕES DE TIMEOUT ===
+Timeout=4                               # Timeout para operações de rede
+TrapperTimeout=300                      # Timeout para trappers
+UnreachablePeriod=45                    # Período para host inalcançável
+UnavailableDelay=60                     # Delay para host indisponível
+UnreachableDelay=15                     # Delay para re-verificação
 
-# Configurações de Log
+# === CONFIGURAÇÕES DE LOG ===
 LogFile=/var/log/zabbix/zabbix_proxy.log
-LogFileSize=10
-DebugLevel=3
+LogFileSize=10                          # Tamanho máximo em MB
+DebugLevel=3                            # 0-5 (fatal a trace)
 
-# Configurações de Dados
-ProxyLocalBuffer=0
-ProxyOfflineBuffer=1
-HeartbeatFrequency=60
-ConfigFrequency=3600
-DataSenderFrequency=1
+# === CONFIGURAÇÕES DE SINCRONIZAÇÃO ===
+ProxyLocalBuffer=0                      # Buffer local (0=desabilitado)
+ProxyOfflineBuffer=24                   # Horas de buffer offline
+HeartbeatFrequency=60                   # Frequência de heartbeat
+ConfigFrequency=600                     # Frequência de config (10 min)
+DataSenderFrequency=1                   # Frequência de envio de dados
+LogRemoteCommands=1                     # Habilitar comandos remotos
 ```
 
 ### Configurar Permissões
 
 ```bash
-# Criar diretório de log se não existir
+# Criar diretório de log
 sudo mkdir -p /var/log/zabbix
-sudo chown zabbix:zabbix /var/log/zabbix
 
-# Ajustar permissões do arquivo de configuração
+# Configurar proprietário e permissões
+sudo chown zabbix:zabbix /var/log/zabbix
 sudo chown zabbix:zabbix /etc/zabbix/zabbix_proxy.conf
 sudo chmod 640 /etc/zabbix/zabbix_proxy.conf
 ```
@@ -281,6 +322,9 @@ sudo systemctl restart zabbix-proxy zabbix-agent2 mysql
 
 # Habilitar inicialização automática
 sudo systemctl enable zabbix-proxy zabbix-agent2 mysql
+
+# Verificar status
+sudo systemctl status zabbix-proxy zabbix-agent2 mysql
 ```
 
 ## ✅ Verificações Pós-Instalação
@@ -288,38 +332,47 @@ sudo systemctl enable zabbix-proxy zabbix-agent2 mysql
 ### Status dos Serviços
 
 ```bash
-# Verificar se todos os serviços estão ativos
-sudo systemctl status zabbix-proxy zabbix-agent2 mysql
+# Status detalhado dos serviços
+sudo systemctl status zabbix-proxy --no-pager -l
+sudo systemctl status mysql --no-pager -l
+sudo systemctl status zabbix-agent2 --no-pager -l
 ```
 
 ### Verificar Logs do Proxy
 
 ```bash
-# Verificar logs em tempo real
+# Monitorar logs em tempo real
 sudo tail -f /var/log/zabbix/zabbix_proxy.log
 
 # Verificar últimas 50 linhas
 sudo tail -50 /var/log/zabbix/zabbix_proxy.log
+
+# Buscar por erros
+sudo grep -i error /var/log/zabbix/zabbix_proxy.log
 ```
 
 ### Testar Conectividade
 
 ```bash
 # Verificar portas em uso
-sudo netstat -tlnp | grep -E \"(10051|3306)\"
+sudo ss -tulpn | grep -E "(10051|3306)"
 
-# Testar conexão com banco local
-mysql -u zabbix_proxy -p -e \"SELECT VERSION();\" zabbix_proxy
+# Testar conexão com MySQL
+mysql -u zabbix_proxy -p -e "SELECT VERSION();" zabbix_proxy
 
 # Testar conectividade com Zabbix Server
+# ⚠️ SUBSTITUIR IP_DO_ZABBIX_SERVER
 telnet IP_DO_ZABBIX_SERVER 10051
 ```
 
 ### Verificar Configuração
 
 ```bash
-# Testar configuração do proxy
+# Testar sintaxe da configuração
 sudo zabbix_proxy -c /etc/zabbix/zabbix_proxy.conf -t
+
+# Verificar processos em execução
+ps aux | grep zabbix_proxy
 ```
 
 ## 🔗 Configuração no Zabbix Server
@@ -344,11 +397,14 @@ sudo zabbix_proxy -c /etc/zabbix/zabbix_proxy.conf -t
 ### Verificar Status do Proxy
 
 ```bash
-# No servidor proxy, verificar se está conectando
-sudo grep -i \"sending heartbeat\" /var/log/zabbix/zabbix_proxy.log
+# Verificar comunicação com o server
+sudo grep -i "sending heartbeat" /var/log/zabbix/zabbix_proxy.log
 
-# Verificar se está recebendo configuração
-sudo grep -i \"received configuration\" /var/log/zabbix/zabbix_proxy.log
+# Verificar recebimento de configuração
+sudo grep -i "received configuration" /var/log/zabbix/zabbix_proxy.log
+
+# Verificar sincronização de dados
+sudo grep -i "sending data" /var/log/zabbix/zabbix_proxy.log
 ```
 
 ## 🔥 Configuração de Firewall
@@ -356,22 +412,22 @@ sudo grep -i \"received configuration\" /var/log/zabbix/zabbix_proxy.log
 ### Configurar UFW (Ubuntu Firewall)
 
 ```bash
-# Habilitar UFW se não estiver ativo
-sudo ufw enable
-
-# Permitir SSH (importante!)
+# ⚠️ IMPORTANTE: Configurar SSH antes de habilitar UFW
 sudo ufw allow ssh
 
-# Permitir conexão com Zabbix Server
+# Habilitar UFW
+sudo ufw enable
+
+# Permitir comunicação do proxy com o server (saída)
 sudo ufw allow out 10051/tcp
 
-# Permitir conexões de agents locais
+# Permitir agentes se conectarem ao proxy (entrada)
 sudo ufw allow 10051/tcp
 
-# Permitir MySQL local
+# Permitir MySQL apenas localmente
 sudo ufw allow from 127.0.0.1 to any port 3306
 
-# Verificar status
+# Verificar regras configuradas
 sudo ufw status verbose
 ```
 
@@ -380,14 +436,14 @@ sudo ufw status verbose
 ### Comandos Úteis para Diagnóstico
 
 ```bash
-# Verificar status detalhado do proxy
+# Status detalhado do zabbix-proxy
 sudo systemctl status zabbix-proxy -l
 
 # Monitorar logs em tempo real
 sudo journalctl -u zabbix-proxy -f
 
 # Verificar uso de recursos
-top -p $(pgrep zabbix_proxy)
+top -p $(pgrep zabbix_proxy | tr '\n' ',')
 
 # Verificar conexões de rede
 sudo ss -tulpn | grep 10051
@@ -410,10 +466,21 @@ df -h /var/log/zabbix/
 
 ```bash
 #!/bin/bash
-# Script para monitorar performance do MySQL
+# Script para monitoramento do Zabbix Proxy
 
-echo \"=== MySQL Status ===\"
-mysql -u zabbix_proxy -p -e \"
+echo "=== Status dos Serviços ==="
+sudo systemctl is-active zabbix-proxy mysql zabbix-agent2
+
+echo -e "\n=== Uso de Recursos ==="
+echo "CPU e Memória dos processos Zabbix:"
+ps aux | grep zabbix | grep -v grep
+
+echo -e "\n=== Conectividade ==="
+echo "Portas em uso:"
+sudo ss -tulpn | grep -E "(10051|3306)"
+
+echo -e "\n=== Status do MySQL ==="
+mysql -u zabbix_proxy -p -e "
 SELECT 
     VARIABLE_NAME, 
     VARIABLE_VALUE 
@@ -423,17 +490,17 @@ WHERE VARIABLE_NAME IN (
     'Queries',
     'Slow_queries',
     'Uptime'
-);\"
+);" 2>/dev/null
 
-echo \"=== Zabbix Proxy Tables ===\"
-mysql -u zabbix_proxy -p zabbix_proxy -e \"
+echo -e "\n=== Tamanho do Banco ==="
+mysql -u zabbix_proxy -p zabbix_proxy -e "
 SELECT 
     TABLE_NAME,
     ROUND(((DATA_LENGTH + INDEX_LENGTH) / 1024 / 1024), 2) AS 'Size (MB)'
 FROM INFORMATION_SCHEMA.TABLES 
 WHERE TABLE_SCHEMA = 'zabbix_proxy'
 ORDER BY (DATA_LENGTH + INDEX_LENGTH) DESC
-LIMIT 10;\"
+LIMIT 5;" 2>/dev/null
 ```
 
 ## 🛠️ Manutenção
@@ -442,33 +509,48 @@ LIMIT 10;\"
 
 ```bash
 #!/bin/bash
-# Script de backup do banco do proxy
+# Script de backup automatizado
 
-BACKUP_DIR=\"/backup/zabbix-proxy\"
+BACKUP_DIR="/backup/zabbix-proxy"
 DATE=$(date +%Y%m%d_%H%M%S)
-DB_USER=\"zabbix_proxy\"
-DB_NAME=\"zabbix_proxy\"
+DB_USER="zabbix_proxy"
+DB_NAME="zabbix_proxy"
 
-mkdir -p $BACKUP_DIR
+# Criar diretório de backup
+mkdir -p "$BACKUP_DIR"
 
-# Backup do banco
-mysqldump -u $DB_USER -p $DB_NAME > $BACKUP_DIR/zabbix_proxy_$DATE.sql
-gzip $BACKUP_DIR/zabbix_proxy_$DATE.sql
+echo "Iniciando backup do Zabbix Proxy..."
+
+# Backup do banco de dados
+echo "Fazendo backup do banco de dados..."
+mysqldump -u "$DB_USER" -p "$DB_NAME" > "$BACKUP_DIR/zabbix_proxy_db_$DATE.sql"
+gzip "$BACKUP_DIR/zabbix_proxy_db_$DATE.sql"
 
 # Backup da configuração
-cp /etc/zabbix/zabbix_proxy.conf $BACKUP_DIR/zabbix_proxy_conf_$DATE.backup
+echo "Fazendo backup da configuração..."
+cp /etc/zabbix/zabbix_proxy.conf "$BACKUP_DIR/zabbix_proxy_conf_$DATE.conf"
 
-# Manter apenas últimos 7 backups
-find $BACKUP_DIR -name \"*.sql.gz\" -mtime +7 -delete
-find $BACKUP_DIR -name \"*.backup\" -mtime +7 -delete
+# Limpeza de backups antigos (manter 7 dias)
+echo "Removendo backups antigos..."
+find "$BACKUP_DIR" -name "*.sql.gz" -mtime +7 -delete
+find "$BACKUP_DIR" -name "*.conf" -mtime +7 -delete
 
-echo \"Backup concluído: $BACKUP_DIR/zabbix_proxy_$DATE.sql.gz\"
+echo "Backup concluído em: $BACKUP_DIR"
+```
+
+#### Automatizar via cron:
+```bash
+# Editar crontab
+sudo crontab -e
+
+# Adicionar linha para backup diário às 2h
+0 2 * * * /path/to/backup_script.sh
 ```
 
 ### Configurar Logrotate
 
 ```bash
-# Configurar logrotate para Zabbix Proxy
+# Criar configuração de logrotate
 sudo nano /etc/logrotate.d/zabbix-proxy
 ```
 
@@ -482,7 +564,7 @@ sudo nano /etc/logrotate.d/zabbix-proxy
     notifempty
     create 0644 zabbix zabbix
     postrotate
-        /bin/systemctl reload zabbix-proxy
+        /bin/systemctl reload zabbix-proxy > /dev/null 2>&1 || true
     endscript
 }
 ```
@@ -491,18 +573,20 @@ sudo nano /etc/logrotate.d/zabbix-proxy
 
 ```bash
 # Verificar tamanho do banco
-mysql -u zabbix_proxy -p zabbix_proxy -e \"
+mysql -u zabbix_proxy -p zabbix_proxy -e "
 SELECT 
-    ROUND(SUM(DATA_LENGTH + INDEX_LENGTH) / 1024 / 1024, 1) AS 'DB Size in MB' 
+    ROUND(SUM(DATA_LENGTH + INDEX_LENGTH) / 1024 / 1024, 2) AS 'DB Size (MB)' 
 FROM INFORMATION_SCHEMA.TABLES 
-WHERE TABLE_SCHEMA = 'zabbix_proxy';\"
+WHERE TABLE_SCHEMA = 'zabbix_proxy';"
 
-# Limpar dados antigos (executar com cuidado)
-mysql -u zabbix_proxy -p zabbix_proxy -e \"
-DELETE FROM proxy_history WHERE clock < UNIX_TIMESTAMP(DATE_SUB(NOW(), INTERVAL 7 DAY));\"
+# Reiniciar apenas o proxy
+sudo systemctl restart zabbix-proxy
 
-# Otimizar tabelas
-mysql -u zabbix_proxy -p zabbix_proxy -e \"OPTIMIZE TABLE proxy_history;\"
+# Verificar configuração sem reiniciar
+sudo zabbix_proxy -c /etc/zabbix/zabbix_proxy.conf -t
+
+# Monitorar performance em tempo real
+watch -n 5 'ps aux | grep zabbix_proxy | grep -v grep'
 ```
 
 ## 📚 Referências
