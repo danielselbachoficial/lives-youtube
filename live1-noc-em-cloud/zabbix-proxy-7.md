@@ -128,7 +128,7 @@ sudo journalctl -u zabbix-proxy -f
 
 ```
 
-## 🔍 10. Verificar Funcionamento
+## 🔍 9. Verificar Funcionamento
 
 ```bash
 # Verificar logs
