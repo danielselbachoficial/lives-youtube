@@ -95,10 +95,12 @@ DBUser=zabbix
 DBPassword=@dmin123
 
 Server=IP_OU_HOSTNAME_DO_SERVER
-Hostname=zabbix-proxy  
+HostnameItem=system.hostname 
 LogFile=/var/log/zabbix/zabbix_proxy.log
 LogFileSize=0
 Timeout=4
+
+ProxyLocalBuffer=0
 ```
 Explicação narrativa dos campos críticos:
 
