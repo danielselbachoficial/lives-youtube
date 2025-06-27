@@ -78,6 +78,9 @@ CREATE USER 'zabbix_proxy'@'localhost' IDENTIFIED BY '@dmin123';
 -- Conceder privilégios
 GRANT ALL PRIVILEGES ON zabbix_proxy.* TO 'zabbix_proxy'@'localhost';
 
+-- Habilitar criação de funções sem privilégios SUPER
+SET GLOBAL log_bin_trust_function_creators = 1;
+
 -- Aplicar mudanças
 FLUSH PRIVILEGES;
 
@@ -90,6 +93,12 @@ EXIT;
 ```bash
 # Importar estrutura do banco de dados
 cat /usr/share/zabbix-sql-scripts/mysql/proxy.sql | mysql -u zabbix_proxy -p zabbix_proxy
+
+# Verificar se as tabelas foram criadas corretamente
+mysql -u zabbix_proxy -p zabbix_proxy -e "SELECT COUNT(*) as 'Total de Tabelas' FROM information_schema.tables WHERE table_schema = 'zabbix_proxy';"
+
+# Verificar algumas tabelas específicas
+mysql -u zabbix_proxy -p zabbix_proxy -e "SHOW TABLES LIKE 'hosts'; SHOW TABLES LIKE 'items'; SHOW TABLES LIKE 'proxy_%';"
 ```
 
 ## ⚙️ 8. Configurar o Zabbix Proxy
@@ -116,11 +125,6 @@ DBHost=localhost
 DBName=zabbix_proxy
 DBUser=zabbix_proxy
 DBPassword=@dmin123
-
-# Configurações de performance
-ProxyOfflineBuffer=24
-ConfigFrequency=3600
-DataSenderFrequency=1
 
 # Log
 LogFile=/var/log/zabbix/zabbix_proxy.log
@@ -169,7 +173,7 @@ systemctl restart zabbix-proxy
 journalctl -u zabbix-proxy -f
 
 # Verificar configuração
-zabbix_proxy -c /etc/zabbix/zabbix_proxy.conf -t
+zabbix_proxy -c /etc/zabbix/zabbix_proxy.conf -T
 ```
 
 ## 🆘 Solução de Problemas
