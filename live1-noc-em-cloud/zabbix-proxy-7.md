@@ -102,11 +102,11 @@ Timeout=4
 ```
 Explicação narrativa dos campos críticos:
 
-DBHost aponta ao socket local PostgreSQL; mantém latência mínima.
-DBName, DBUser e DBPassword correspondem aos artefatos criados na etapa 2.
-Server deve refletir o endereço IPv4/IPv6 ou FQDN do Zabbix Server. Esse valor é usado no handshake inicial.
-Hostname precisa ser igual ao nome cadastrado no frontend do Server; divergências causam recusa de conexão.
-LogFile e LogFileSize=0 preservam logs ilimitados em /var/log/zabbix.
+- DBHost aponta ao socket local PostgreSQL; mantém latência mínima.
+- DBName, DBUser e DBPassword correspondem ao acesso criado na etapa 3.
+- Server deve refletir o endereço IPv4/IPv6 ou FQDN do Zabbix Server. Esse valor é usado no handshake inicial.
+- Hostname precisa ser igual ao nome cadastrado no frontend do Server; divergências causam recusa de conexão.
+- LogFile e LogFileSize=0 preservam logs ilimitados em /var/log/zabbix.
 
 ## 🚀 8. Iniciar o Serviço
 
