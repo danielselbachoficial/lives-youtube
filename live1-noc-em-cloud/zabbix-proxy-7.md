@@ -4,17 +4,26 @@
 [![MySQL](https://img.shields.io/badge/MySQL-8.0-blue?style=for-the-badge&logo=mysql)](https://www.mysql.com/)
 [![Ubuntu](https://img.shields.io/badge/Ubuntu-24.04-orange?style=for-the-badge&logo=ubuntu)](https://ubuntu.com/)
 
+## 📋 Pré-requisitos
 
+- Ubuntu 24.04 LTS
+- Acesso root ou sudo
+- Conexão com internet
+- Servidor Zabbix principal já configurado
 
-1. Instalar as dependências:
-# Dependências
+## 🔧 1. Instalar Dependências
+
+```bash
+# Instalar dependências básicas
 apt-get install -y wget curl net-tools 
 
-#Configurar a timezone
+# Configurar timezone para São Paulo
 timedatectl set-timezone America/Sao_Paulo
+```
 
-2. Adicionar Repositório Oficial do Zabbix
+## 📦 2. Adicionar Repositório Oficial do Zabbix
 
+```bash
 # Baixar o pacote de repositório para Ubuntu 24.04
 wget https://repo.zabbix.com/zabbix/7.0/ubuntu/pool/main/z/zabbix-release/zabbix-release_7.0-2+ubuntu24.04_all.deb
 
@@ -23,52 +32,76 @@ dpkg -i zabbix-release_7.0-2+ubuntu24.04_all.deb
 
 # Atualizar lista de pacotes
 apt update
+```
 
-3. Instalar Zabbix Proxy e Dependências
+## ⚙️ 3. Instalar Zabbix Proxy e Dependências
 
+```bash
 # Instalar o Zabbix Proxy MySQL e scripts SQL
 apt install zabbix-proxy-mysql zabbix-sql-scripts
 
 # Instalar MySQL Server se ainda não estiver instalado
 apt install mysql-server
+```
 
-4. Verificar Instalação
+## ✅ 4. Verificar Instalação
 
+```bash
 # Verificar se os pacotes foram instalados corretamente
 dpkg -l | grep zabbix
 
 # Verificar versão do Zabbix Proxy
 zabbix_proxy --version
+```
 
-5. Configurar MySQL
+## 🗄️ 5. Configurar MySQL
 
+```bash
 # Configurar MySQL (se primeira instalação)
 mysql_secure_installation
 
 # Conectar ao MySQL
 mysql -u root -p
+```
 
-6. Criar Banco de Dados para o Proxy
+## 🏗️ 6. Criar Banco de Dados para o Proxy
 
--- No MySQL
+Execute os comandos SQL abaixo no MySQL:
+
+```sql
+-- Criar banco de dados
 CREATE DATABASE zabbix_proxy CHARACTER SET utf8mb4 COLLATE utf8mb4_bin;
+
+-- Criar usuário
 CREATE USER 'zabbix_proxy'@'localhost' IDENTIFIED BY '@dmin123';
+
+-- Conceder privilégios
 GRANT ALL PRIVILEGES ON zabbix_proxy.* TO 'zabbix_proxy'@'localhost';
+
+-- Aplicar mudanças
 FLUSH PRIVILEGES;
+
+-- Sair do MySQL
 EXIT;
+```
 
-7. Importar Schema do Banco
+## 📊 7. Importar Schema do Banco
 
+```bash
 # Importar estrutura do banco de dados
 cat /usr/share/zabbix-sql-scripts/mysql/proxy.sql | mysql -u zabbix_proxy -p zabbix_proxy
+```
 
-8. Configurar o Zabbix Proxy
+## ⚙️ 8. Configurar o Zabbix Proxy
 
+```bash
 # Editar arquivo de configuração
 nano /etc/zabbix/zabbix_proxy.conf
+```
 
-Configurações principais:
+### Configurações principais no arquivo:
 
+```ini
 # IP do servidor Zabbix principal
 Server=IP_DO_SEU_ZABBIX_SERVER
 
@@ -92,9 +125,11 @@ DataSenderFrequency=1
 # Log
 LogFile=/var/log/zabbix/zabbix_proxy.log
 LogFileSize=10
+```
 
-9. Iniciar o Serviço
+## 🚀 9. Iniciar o Serviço
 
+```bash
 # Criar diretório de logs
 mkdir -p /var/log/zabbix
 chown zabbix:zabbix /var/log/zabbix
@@ -105,12 +140,43 @@ systemctl start zabbix-proxy
 
 # Verificar status
 systemctl status zabbix-proxy
+```
 
+## 🔍 10. Verificar Funcionamento
 
-10. Verificar Funcionamento
-
+```bash
 # Verificar logs
 tail -f /var/log/zabbix/zabbix_proxy.log
 
 # Verificar se está escutando na porta
 ss -tlnp | grep 10051
+```
+
+## 📝 Notas Importantes
+
+- **Segurança**: Altere a senha padrão `@dmin123` por uma senha mais segura
+- **Firewall**: Certifique-se de que a porta 10051 esteja liberada
+- **Nome do Proxy**: O nome configurado em `Hostname` deve ser único na sua infraestrutura
+- **Conectividade**: O proxy deve conseguir se comunicar com o servidor Zabbix principal
+
+## 🔧 Comandos Úteis
+
+```bash
+# Reiniciar o serviço
+systemctl restart zabbix-proxy
+
+# Ver logs em tempo real
+journalctl -u zabbix-proxy -f
+
+# Verificar configuração
+zabbix_proxy -c /etc/zabbix/zabbix_proxy.conf -t
+```
+
+## 🆘 Solução de Problemas
+
+Se encontrar problemas, verifique:
+
+1. **Logs do sistema**: `journalctl -u zabbix-proxy`
+2. **Logs do Zabbix**: `/var/log/zabbix/zabbix_proxy.log`
+3. **Conectividade de rede**: `telnet IP_ZABBIX_SERVER 10051`
+4. **Banco de dados**: Teste a conexão MySQL
