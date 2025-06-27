@@ -125,10 +125,13 @@ DBHost=localhost
 DBName=zabbix_proxy
 DBUser=zabbix_proxy
 DBPassword=@dmin123
+DBSocket=/run/mysqld/mysqld.sock
+DBPort=3306
 
 # Log
 LogFile=/var/log/zabbix/zabbix_proxy.log
-LogFileSize=10
+LogFileSize=1
+DebugLevel=3
 ```
 
 ## 🚀 9. Iniciar o Serviço
