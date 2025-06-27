@@ -152,11 +152,6 @@ journalctl -u zabbix-proxy -f
 
 # Verificar configuração
 zabbix_proxy -c /etc/zabbix/zabbix_proxy.conf -T
-
-# Testar conexão com o banco de dados 
-psql -h localhost -U zabbix -d zabbix_proxy
-
-### Informar a senha criada na etapa 3 ###
 ```
 
 ## 🆘 Solução de Problemas
@@ -166,4 +161,4 @@ Se encontrar problemas, verifique:
 1. **Logs do sistema**: `journalctl -u zabbix-proxy`
 2. **Logs do Zabbix**: `/var/log/zabbix/zabbix_proxy.log`
 3. **Conectividade de rede**: `telnet IP_ZABBIX_SERVER 10051`
-4. **Banco de dados**: Teste a conexão MySQL
+4. **Banco de dados** (Informar a senha criada na etapa 3): Teste a conexão MySQL `psql -h localhost -U zabbix -d zabbix_proxy`
