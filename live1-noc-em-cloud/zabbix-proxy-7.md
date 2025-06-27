@@ -1,237 +1,116 @@
-
+# Manual de Instalação do 📊 Zabbix Proxy 7.0 LTS
 
 [![Zabbix](https://img.shields.io/badge/Zabbix-7.0-red?style=for-the-badge&logo=zabbix)](https://www.zabbix.com/)
 [![MySQL](https://img.shields.io/badge/MySQL-8.0-blue?style=for-the-badge&logo=mysql)](https://www.mysql.com/)
 [![Ubuntu](https://img.shields.io/badge/Ubuntu-24.04-orange?style=for-the-badge&logo=ubuntu)](https://ubuntu.com/)
 
-# Manual de Instalação do 📊 Zabbix Proxy 7.0 LTS (MariaDB, Proxy e Agent)
 
-## 1. Instalar MariaDB
 
-### Instalação do pacote MariaDB
-```bash
-apt -y install mariadb-server
-```
+1. Instalar as dependências:
+# Dependências
+apt-get install -y wget curl net-tools 
 
-### Configuração do conjunto de caracteres
-```bash
-vim /etc/mysql/mariadb.conf.d/50-server.cnf
-```
+#Configurar a timezone
+timedatectl set-timezone America/Sao_Paulo
 
-**Instruções para edição:**
-1. Execute o comando `:set number` e aperte ENTER
-2. Edite a linha 95 do arquivo:
+2. Adicionar Repositório Oficial do Zabbix
 
-```ini
-# se usar UTF-8 de 4 bytes, especifique [utf8mb4]
-character-set-server  = utf8mb4
-collation-server      = utf8mb4_general_ci
-```
+# Baixar o pacote de repositório para Ubuntu 24.04
+wget https://repo.zabbix.com/zabbix/7.0/ubuntu/pool/main/z/zabbix-release/zabbix-release_7.0-2+ubuntu24.04_all.deb
 
-### Reiniciar o serviço
-```bash
-systemctl restart mariadb
-```
+# Instalar o pacote de repositório
+dpkg -i zabbix-release_7.0-2+ubuntu24.04_all.deb
 
----
+# Atualizar lista de pacotes
+apt update
 
-## 2. Configurações Iniciais para MariaDB
+3. Instalar Zabbix Proxy e Dependências
 
-### Executar script de segurança
-```bash
+# Instalar o Zabbix Proxy MySQL e scripts SQL
+apt install zabbix-proxy-mysql zabbix-sql-scripts
+
+# Instalar MySQL Server se ainda não estiver instalado
+apt install mysql-server
+
+4. Verificar Instalação
+
+# Verificar se os pacotes foram instalados corretamente
+dpkg -l | grep zabbix
+
+# Verificar versão do Zabbix Proxy
+zabbix_proxy --version
+
+5. Configurar MySQL
+
+# Configurar MySQL (se primeira instalação)
 mysql_secure_installation
-```
 
-**Processo de configuração:**
+# Conectar ao MySQL
+mysql -u root -p
 
-```
-NOTE: RUNNING ALL PARTS OF THIS SCRIPT IS RECOMMENDED FOR ALL MariaDB
-      SERVERS IN PRODUCTION USE!  PLEASE READ EACH STEP CAREFULLY!
+6. Criar Banco de Dados para o Proxy
 
-In order to log into MariaDB to secure it, we'll need the current
-password for the root user. If you've just installed MariaDB, and
-haven't set the root password yet, you should just press enter here.
+-- No MySQL
+CREATE DATABASE zabbix_proxy CHARACTER SET utf8mb4 COLLATE utf8mb4_bin;
+CREATE USER 'zabbix_proxy'@'localhost' IDENTIFIED BY '@dmin123';
+GRANT ALL PRIVILEGES ON zabbix_proxy.* TO 'zabbix_proxy'@'localhost';
+FLUSH PRIVILEGES;
+EXIT;
 
-Enter current password for root (enter for none):
-OK, successfully used password, moving on...
+7. Importar Schema do Banco
 
-Setting the root password or using the unix_socket ensures that nobody
-can log into the MariaDB root user without the proper authorisation.
+# Importar estrutura do banco de dados
+cat /usr/share/zabbix-sql-scripts/mysql/proxy.sql | mysql -u zabbix_proxy -p zabbix_proxy
 
-You already have your root account protected, so you can safely answer 'n'.
-```
+8. Configurar o Zabbix Proxy
 
-### Opções de configuração:
+# Editar arquivo de configuração
+nano /etc/zabbix/zabbix_proxy.conf
 
-#### Autenticação unix_socket
-```
-# Alternar para autenticação [unix_socket] ou não
-# A autenticação [unix_socket] está habilitada para o usuário root por padrão, mesmo se você selecionar [No]
-Switch to unix_socket authentication [Y/n] n
- ... skipping.
-```
+Configurações principais:
 
-#### Senha do root
-```
-# definir senha root do MariaDB ou não
-# A autenticação [unix_socket] está habilitada por padrão, mas
-# se você definir a senha root, também é possível fazer login com autenticação por senha.
-# se não definir a senha root, apenas o usuário root do SO pode fazer login como usuário root do MariaDB
-Change the root password? [Y/n] n
- ... skipping.
-```
+# IP do servidor Zabbix principal
+Server=IP_DO_SEU_ZABBIX_SERVER
 
-#### Remover usuários anônimos
-```
-# remover usuários anônimos
-Remove anonymous users? [Y/n] y
- ... Success!
-```
+# Nome do proxy (deve ser único)
+Hostname=NOME_DO_ZABBIX-PROXY
 
-#### Desabilitar login root remoto
-```
-# desabilitar login root remotamente
-Disallow root login remotely? [Y/n] y
- ... Success!
-```
+# Porta de escuta
+ListenPort=10051
 
-#### Remover banco de dados de teste
-```
-# remover banco de dados de teste
-Remove test database and access to it? [Y/n] y
- - Dropping test database...
- ... Success!
- - Removing privileges on test database...
- ... Success!
-```
-
-#### Recarregar tabelas de privilégios
-```
-# recarregar tabelas de privilégios
-Reload privilege tables now? [Y/n] y
- ... Success!
-
-Cleaning up...
-
-All done!  If you've completed all of the above steps, your MariaDB
-installation should now be secure.
-
-Thanks for using MariaDB!
-```
-
----
-
-## 3. Criar um Banco de Dados para o Zabbix Proxy
-
-### Acessar o MariaDB e criar o banco
-```bash
-mysql
-```
-
-```sql
-create database zabbix_proxy character set utf8mb4 collate utf8mb4_bin;
-grant all privileges on zabbix_proxy.* to zabbix@'localhost' identified by 'password';
-exit
-```
-
-### Importar esquema do banco
-```bash
-cat /usr/share/zabbix-sql-scripts/mysql/proxy.sql | mysql -uzabbix -p zabbix_proxy
-```
-
----
-
-## 4. Instalar Zabbix Proxy
-
-### Download e instalação dos repositórios
-```bash
-wget https://repo.zabbix.com/zabbix/7.0/ubuntu/pool/main/z/zabbix-release/zabbix-release_7.0-1+ubuntu24.04_all.deb
-dpkg -i zabbix-release_7.0-1+ubuntu24.04_all.deb
-apt update
-apt -y install zabbix-proxy-mysql zabbix-sql-scripts
-```
-
----
-
-## 5. Configurar Zabbix Proxy
-
-### Editar arquivo de configuração
-```bash
-vim /etc/zabbix/zabbix_proxy.conf
-```
-
-### Parâmetros de configuração:
-```ini
-# linha 14: adicionar modo proxy
-# 0 = modo ativo, 1 = modo passivo
-ProxyMode=0
-
-# linha 32: especificar servidor Zabbix
-Server=10.0.0.30
-
-# linha 42: especificar nome do host do Zabbix Proxy
-Hostname=prox.srv.world
-
-# linha 160: especificar host do BD
+# Configurações do banco de dados
 DBHost=localhost
-
-# linha 173: especificar nome do BD
 DBName=zabbix_proxy
+DBUser=zabbix_proxy
+DBPassword=@dmin123
 
-# linha 188: especificar usuário do BD
-DBUser=zabbix
+# Configurações de performance
+ProxyOfflineBuffer=24
+ConfigFrequency=3600
+DataSenderFrequency=1
 
-# linha 197: adicionar senha do usuário do BD
-DBPassword=password
-```
+# Log
+LogFile=/var/log/zabbix/zabbix_proxy.log
+LogFileSize=10
 
-### Iniciar e habilitar o serviço
-```bash
-systemctl start zabbix-proxy
+9. Iniciar o Serviço
+
+# Criar diretório de logs
+mkdir -p /var/log/zabbix
+chown zabbix:zabbix /var/log/zabbix
+
+# Habilitar e iniciar o serviço
 systemctl enable zabbix-proxy
-```
+systemctl start zabbix-proxy
 
----
+# Verificar status
+systemctl status zabbix-proxy
 
-## 6. Instalar o Zabbix Agent 2
 
-### Download e instalação
-```bash
-wget https://repo.zabbix.com/zabbix/7.0/ubuntu/pool/main/z/zabbix-release/zabbix-release_7.0-1+ubuntu24.04_all.deb
-dpkg -i zabbix-release_7.0-1+ubuntu24.04_all.deb
-apt update
-apt -y install zabbix-agent2
-```
+10. Verificar Funcionamento
 
-### Configurar o Agent
-```bash
-vim /etc/zabbix/zabbix_agent2.conf
-```
+# Verificar logs
+tail -f /var/log/zabbix/zabbix_proxy.log
 
-### Parâmetros de configuração:
-```ini
-# linha 80: especificar servidor Zabbix
-Server=10.0.0.30
-
-# linha 133: especificar servidor Zabbix
-ServerActive=10.0.0.30
-
-# linha 144: alterar para o nome do seu host
-Hostname=node01.srv.world
-```
-
-### Reiniciar o serviço
-```bash
-systemctl restart zabbix-agent2
-```
-
----
-
-## ✅ Resumo da Instalação
-
-1. **MariaDB** - Banco de dados instalado e configurado com segurança
-2. **Banco Zabbix Proxy** - Banco específico criado com usuário dedicado
-3. **Zabbix Proxy** - Instalado e configurado em modo ativo
-4. **Zabbix Agent 2** - Instalado nos servidores de monitoramento
-
-> **Nota:** Certifique-se de ajustar os endereços IP e nomes de host conforme sua infraestrutura antes de implementar em produção.
+# Verificar se está escutando na porta
+ss -tlnp | grep 10051
