@@ -2,11 +2,10 @@
 
 [![Zabbix](https://img.shields.io/badge/Zabbix-7.0-red?style=for-the-badge&logo=zabbix)](https://www.zabbix.com/)
 [![MySQL](https://img.shields.io/badge/MySQL-8.0-blue?style=for-the-badge&logo=mysql)](https://www.mysql.com/)
-[![Ubuntu](https://img.shields.io/badge/Ubuntu-24.04-orange?style=for-the-badge&logo=ubuntu)](https://ubuntu.com/)
 
 ## 📋 Pré-requisitos
 
-- Ubuntu 24.04 LTS
+- Debian 12
 - Acesso root ou sudo
 - Conexão com internet
 - Servidor Zabbix principal já configurado
@@ -15,138 +14,118 @@
 
 ```bash
 # Instalar dependências básicas
-apt-get install -y wget curl net-tools 
+apt update
+apt upgrade -y
+apt-get install -y wget curl net-tools sudo gnupg2 lsb-release apt-transport-https vim
 
 # Configurar timezone para São Paulo
 timedatectl set-timezone America/Sao_Paulo
 ```
 
-## 📦 2. Adicionar Repositório Oficial do Zabbix
+## 🗄️ 2. Instalação e Configuração do Banco de Dados PostgreSQL
 
 ```bash
-# Baixar o pacote de repositório para Ubuntu 24.04
-wget https://repo.zabbix.com/zabbix/7.0/ubuntu/pool/main/z/zabbix-release/zabbix-release_7.0-2+ubuntu24.04_all.deb
+# Instalar o servidor e cliente PostgreSQL
+sudo apt install -y postgresql postgresql-client
+```
+
+## 🏗️ 3. Criar Banco de Dados para o Proxy
+```bash
+# Conectar ao PostgreSQL
+sudo -u postgres psql
+```
+
+Execute os comandos SQL abaixo no PostgreSQL:
+
+```sql
+CREATE USER zabbix WITH PASSWORD '@dmin123';
+CREATE DATABASE zabbix_proxy
+  WITH OWNER zabbix
+  ENCODING 'UTF8'
+  LC_COLLATE='C'
+  LC_CTYPE='C'
+  TEMPLATE template0;
+GRANT ALL PRIVILEGES ON DATABASE zabbix_proxy TO zabbix;
+\q
+```
+
+## 📦 4. Adicionar Repositório Oficial do Zabbix
+
+```bash
+# Baixar o pacote de repositório para Debian 12
+wget https://repo.zabbix.com/zabbix/7.0/debian/pool/main/z/zabbix-release/zabbix-release_7.0-1+debian12_all.deb
 
 # Instalar o pacote de repositório
-dpkg -i zabbix-release_7.0-2+ubuntu24.04_all.deb
+sudo dpkg -i zabbix-release_7.0-1+debian12_all.deb
 
 # Atualizar lista de pacotes
 apt update
 ```
 
-## ⚙️ 3. Instalar Zabbix Proxy e Dependências
+## 📦 5. Instalação dos Pacotes do Zabbix Proxy
 
 ```bash
-# Instalar o Zabbix Proxy MySQL e scripts SQL
-apt install zabbix-proxy-mysql zabbix-sql-scripts
-
-# Instalar MySQL Server se ainda não estiver instalado
-apt install mysql-server
+# Instalar o Zabbix Proxy PostgreSQL e scripts SQL
+apt install zabbix-proxy-pgsql zabbix-sql-scripts
 ```
 
-## ✅ 4. Verificar Instalação
-
-```bash
-# Verificar se os pacotes foram instalados corretamente
-dpkg -l | grep zabbix
-
-# Verificar versão do Zabbix Proxy
-zabbix_proxy --version
-```
-
-## 🗄️ 5. Configurar MySQL
-
-```bash
-# Configurar MySQL (se primeira instalação)
-mysql_secure_installation
-
-# Conectar ao MySQL
-mysql -u root -p
-```
-
-## 🏗️ 6. Criar Banco de Dados para o Proxy
-
-Execute os comandos SQL abaixo no MySQL:
-
-```sql
--- Criar banco de dados
-CREATE DATABASE zabbix_proxy CHARACTER SET utf8mb4 COLLATE utf8mb4_bin;
-
--- Criar usuário
-CREATE USER 'zabbix_proxy'@'localhost' IDENTIFIED BY '@dmin123';
-
--- Conceder privilégios
-GRANT ALL PRIVILEGES ON zabbix_proxy.* TO 'zabbix_proxy'@'localhost';
-
--- Habilitar criação de funções sem privilégios SUPER
-SET GLOBAL log_bin_trust_function_creators = 1;
-
--- Aplicar mudanças
-FLUSH PRIVILEGES;
-
--- Sair do MySQL
-EXIT;
-```
-
-## 📊 7. Importar Schema do Banco
+## 📊 6. Importar Schema do Banco
 
 ```bash
 # Importar estrutura do banco de dados
-cat /usr/share/zabbix-sql-scripts/mysql/proxy.sql | mysql -u zabbix_proxy -p zabbix_proxy
-
-# Verificar se as tabelas foram criadas corretamente
-mysql -u zabbix_proxy -p zabbix_proxy -e "SELECT COUNT(*) as 'Total de Tabelas' FROM information_schema.tables WHERE table_schema = 'zabbix_proxy';"
-
-# Verificar algumas tabelas específicas
-mysql -u zabbix_proxy -p zabbix_proxy -e "SHOW TABLES LIKE 'hosts'; SHOW TABLES LIKE 'items'; SHOW TABLES LIKE 'proxy_%';"
+cat /usr/share/zabbix-sql-scripts/postgresql/proxy.sql | sudo -u zabbix psql zabbix_proxy
 ```
 
-## ⚙️ 8. Configurar o Zabbix Proxy
+## ⚙️ 7. Configuração do zabbix_proxy.conf
 
 ```bash
-# Editar arquivo de configuração
+# Editar arquivo de configuração com nano
 nano /etc/zabbix/zabbix_proxy.conf
+
+# Editar arquivo de configuração com vim
+vim /etc/zabbix/zabbix_proxy.conf
 ```
 
 ### Configurações principais no arquivo:
 
 ```ini
-# IP do servidor Zabbix principal
-Server=IP_DO_SEU_ZABBIX_SERVER
-
-# Nome do proxy (deve ser único)
-Hostname=NOME_DO_ZABBIX-PROXY
-
-# Porta de escuta
-ListenPort=10051
-
-# Configurações do banco de dados
 DBHost=localhost
 DBName=zabbix_proxy
-DBUser=zabbix_proxy
+DBUser=zabbix
 DBPassword=@dmin123
-DBSocket=/run/mysqld/mysqld.sock
-DBPort=3306
 
-# Log
+Server=IP_OU_HOSTNAME_DO_SERVER
+Hostname=zabbix-proxy  
 LogFile=/var/log/zabbix/zabbix_proxy.log
-LogFileSize=1
-DebugLevel=3
+LogFileSize=0
+Timeout=4
 ```
+Explicação narrativa dos campos críticos:
 
-## 🚀 9. Iniciar o Serviço
+DBHost aponta ao socket local PostgreSQL; mantém latência mínima.
+DBName, DBUser e DBPassword correspondem aos artefatos criados na etapa 2.
+Server deve refletir o endereço IPv4/IPv6 ou FQDN do Zabbix Server. Esse valor é usado no handshake inicial.
+Hostname precisa ser igual ao nome cadastrado no frontend do Server; divergências causam recusa de conexão.
+LogFile e LogFileSize=0 preservam logs ilimitados em /var/log/zabbix.
+
+## 🚀 8. Iniciar o Serviço
 
 ```bash
 # Criar diretório de logs
 mkdir -p /var/log/zabbix
 chown zabbix:zabbix /var/log/zabbix
 
-# Habilitar e iniciar o serviço
-systemctl enable zabbix-proxy
+# Iniciar e Habilitar o serviço
 systemctl start zabbix-proxy
+systemctl enable zabbix-proxy
 
 # Verificar status
 systemctl status zabbix-proxy
+
+# Monitore logs em tempo real:
+sudo journalctl -u zabbix-proxy -f
+
+
 ```
 
 ## 🔍 10. Verificar Funcionamento
@@ -154,15 +133,11 @@ systemctl status zabbix-proxy
 ```bash
 # Verificar logs
 tail -f /var/log/zabbix/zabbix_proxy.log
-
-# Verificar se está escutando na porta
-ss -tlnp | grep 10051
 ```
 
 ## 📝 Notas Importantes
 
 - **Segurança**: Altere a senha padrão `@dmin123` por uma senha mais segura
-- **Firewall**: Certifique-se de que a porta 10051 esteja liberada
 - **Nome do Proxy**: O nome configurado em `Hostname` deve ser único na sua infraestrutura
 - **Conectividade**: O proxy deve conseguir se comunicar com o servidor Zabbix principal
 
@@ -177,6 +152,11 @@ journalctl -u zabbix-proxy -f
 
 # Verificar configuração
 zabbix_proxy -c /etc/zabbix/zabbix_proxy.conf -T
+
+# Testar conexão com o banco de dados 
+psql -h localhost -U zabbix -d zabbix_proxy
+
+### Informar a senha criada na etapa 3 ###
 ```
 
 ## 🆘 Solução de Problemas
