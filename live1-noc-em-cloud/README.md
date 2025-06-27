@@ -9,5 +9,4 @@ Voltado para administradores de rede, profissionais de TI e estudantes que busca
     ├── README.md                    # Você está aqui
     └── grafana.md                   # Instalação e configuração do Grafana
     └── zabbix-7-lts.md              # Instalação e configuração do Zabbix 7 LTS
-    └── api-grafana.md        # Instalação e configuração do Zabbix Proxy 7 LTS
-    └── zabbix-agent2-windows.md     # Instalação e configuração do Zabbix Agent 2 no Windows
+    └── api-grafana.md               # Configuração de Acesso API do Grafana com Zabbix
