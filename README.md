@@ -12,4 +12,5 @@ Cada live possui seu próprio diretório com documentação completa, permitindo
 │   ├── README.md
 │   ├── zabbix-7-lts.md
 │   └── grafana.md
+│   └── api-grafana.md
 ```
